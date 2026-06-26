@@ -77,7 +77,7 @@
     <script src="script.js"></script>
     <script>
         // Setup the game with your hosted URL
-        setupGame("https://abinbins.github.io/a4/city-car-driving-stunt-master/");
+        setupGame("https://abinbins.github.io/a4/city-car-driving-stunt-master/", "city-car-driving");
     </script>
 
 </body>
