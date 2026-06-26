@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bloxd.io | Classroom 24k</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloxd.io | Classroom 24k</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <header onclick="location.href='index.html'">
-        <h1>Classroom 24k</h1>
-    </header>
+<header onclick="location.href='index.html'">
+<h1>Classroom 24k</h1>
+</header>
 
-    <nav></nav>
+<nav></nav>
 
-    <div class="container">
-        <h2 class="game-page-title">Bloxd.io</h2>
+<div class="container">
+<h2 class="game-page-title">Bloxd.io</h2>
 
+        <div id="game-container"></div>
         <div class="game-layout-wrapper">
             
             <div class="side-ad-container">
@@ -55,43 +56,37 @@
 
         </div>
 
-        <button class="fullscreen-btn" onclick="openFullscreen()">
-            ⛶ Fullscreen Mode
-        </button>
+<button class="fullscreen-btn" onclick="openFullscreen()">
+⛶ Fullscreen Mode
+</button>
 
-        <div class="about-section">
-            <div class="about-content">
-                <h2>About the Game</h2>
-                <p>
-                    Bloxd.io is a massive multiplayer parkour and building game. 
-                    An adventure-themed Minecraft-style game, it offers endless creative 
-                    and competitive modes that are entertaining for everyone.
-                </p>
-                
-                <h3 style="color: #00aaff; margin-top: 20px;">Controls</h3>
-                <ul style="list-style: none; padding: 0; line-height: 1.8;">
-                    <li><strong>WASD:</strong> Movement</li>
-                    <li><strong>Spacebar:</strong> Jump</li>
-                    <li><strong>Shift:</strong> Sprint</li>
-                    <li><strong>C:</strong> Crouch</li>
-                    <li><strong>B / E:</strong> Shop & Inventory</li>
-                    <li><strong>Esc:</strong> Exit Fullscreen / Cursor Lock</li>
-                </ul>
-            </div>
-        </div>
-    </div>
+<div class="about-section">
+<div class="about-content">
+<h2>About the Game</h2>
+<p>
+Bloxd.io is a massive multiplayer parkour and building game. 
+An adventure-themed Minecraft-style game, it offers endless creative 
+and competitive modes that are entertaining for everyone.
+</p>
 
-    <script src="script.js"></script>
+<h3 style="color: #00aaff; margin-top: 20px;">Controls</h3>
+<ul style="list-style: none; padding: 0; line-height: 1.8;">
+<li><strong>WASD:</strong> Movement</li>
+<li><strong>Spacebar:</strong> Jump</li>
+<li><strong>Shift:</strong> Sprint</li>
+<li><strong>C:</strong> Crouch</li>
+<li><strong>B / E:</strong> Shop & Inventory</li>
+<li><strong>Esc:</strong> Exit Fullscreen / Cursor Lock</li>
+</ul>
+</div>
+</div>
+</div>
+
+<script src="script.js"></script>
+    
 <script>
-fetch("https://your-worker.workers.dev/game/bloxd")
-  .then(r => r.json())
-  .then(data => setupGame(data.url))
-  .catch(() => {
-    document.getElementById("game-container").innerHTML =
-      "<p style='color:white;text-align:center;'>Game unavailable</p>";
-  });
+setupGame("https://bloxdhop.io/");
 </script>
-
 
 </body>
 </html>
