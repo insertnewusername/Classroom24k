@@ -249,6 +249,7 @@ function logGamePlayed(gameId) {
 
 // ========== 8. RECENTLY PLAYED (with debug) ==========
 function loadRecentlyPlayed() {
+    // Remove any previous listener
     if (unsubscribeRecentlyPlayed) {
         unsubscribeRecentlyPlayed();
         unsubscribeRecentlyPlayed = null;
@@ -260,11 +261,11 @@ function loadRecentlyPlayed() {
     }
 
     const uid = currentUser.uid;
+    const docRef = db.collection('users').doc(uid);
 
-    // Attach a real‑time listener with metadata
-    unsubscribeRecentlyPlayed = db.collection('users').doc(uid)
-        .onSnapshot({ includeMetadataChanges: true }, doc => {
-            console.log('📄 Snapshot data:', doc.data()); // DEBUG: see what we get
+    // First, force a fresh read from the server to get the latest data
+    docRef.get({ source: 'server' })
+        .then(doc => {
             if (doc.exists && doc.data().recentlyPlayed) {
                 const data = doc.data().recentlyPlayed;
                 const sorted = Object.entries(data)
@@ -274,12 +275,43 @@ function loadRecentlyPlayed() {
             } else {
                 renderRecentlyPlayedCarousel([]);
             }
-        }, error => {
-            console.warn('⚠️ Real‑time listener error:', error);
-            renderRecentlyPlayedCarousel([]);
+        })
+        .catch(err => {
+            console.warn('⚠️ Could not fetch from server, using cache:', err);
+            // Fallback to cache
+            docRef.get()
+                .then(doc => {
+                    if (doc.exists && doc.data().recentlyPlayed) {
+                        const data = doc.data().recentlyPlayed;
+                        const sorted = Object.entries(data)
+                            .sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0))
+                            .map(([gameId]) => gameId);
+                        renderRecentlyPlayedCarousel(sorted);
+                    } else {
+                        renderRecentlyPlayedCarousel([]);
+                    }
+                });
         });
-}
 
+    // Now set up a real‑time listener for future updates
+    unsubscribeRecentlyPlayed = docRef.onSnapshot({ includeMetadataChanges: true }, doc => {
+        console.log('📄 Snapshot data (live):', doc.data());
+        if (doc.exists && doc.data().recentlyPlayed) {
+            const data = doc.data().recentlyPlayed;
+            const sorted = Object.entries(data)
+                .sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0))
+                .map(([gameId]) => gameId);
+            renderRecentlyPlayedCarousel(sorted);
+        } else {
+            // Don't clear the carousel if we already have data – avoid flickering
+            // Only update if the carousel is empty or we want to show "No games"
+            // We'll keep it as is: render empty only if it's truly empty
+            renderRecentlyPlayedCarousel([]);
+        }
+    }, error => {
+        console.warn('⚠️ Real‑time listener error:', error);
+    });
+}
 function renderRecentlyPlayedCarousel(gameIds) {
     console.log('🖼️ renderRecentlyPlayedCarousel with:', gameIds);
     const container = document.getElementById('recently-played-container');
