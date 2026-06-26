@@ -75,10 +75,15 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-        // Setup the game with your hosted URL
-        setupGame("https://abinbins.github.io/a8/basket-random/");
-    </script>
+<script>
+fetch("https://classroom24kjs.yuchenliu-matthew.workers.dev/game/basketrandom")
+  .then(r => r.json())
+  .then(data => setupGame(data.url))
+  .catch(() => {
+    document.getElementById("game-container").innerHTML =
+      "<p style='color:white;text-align:center;'>Game unavailable</p>";
+  });
+</script>
 
 </body>
 </html>
