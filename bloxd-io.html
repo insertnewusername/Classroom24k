@@ -82,15 +82,9 @@
     </div>
 
     <script src="script.js"></script>
-<script>
-fetch("https://classroom24kjs.yuchenliu-matthew.workers.dev/game/bloxd")
-  .then(r => r.json())
-  .then(data => setupGame(data.url))
-  .catch(() => {
-    document.getElementById("game-container").innerHTML =
-      "<p style='color:white;text-align:center;'>Game unavailable</p>";
-  });
-</script>
+    <script>
+        setupGame("https://classroom24kjs.yuchenliu-matthew.workers.dev/proxy/bloxd");
+    </script>
 
 
 </body>
