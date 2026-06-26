@@ -29,42 +29,36 @@
 
     <script src="script.js"></script>
     <script>
-        // Wait for auth to be ready, then load games
+        // Wait for auth to be ready, then load the games
         function initRecentlyPlayed() {
-            // If we have a current user, load
-            if (typeof currentUser !== 'undefined' && currentUser) {
+            if (typeof auth === 'undefined') {
+                // Firebase not loaded yet – retry in 300ms
+                setTimeout(initRecentlyPlayed, 300);
+                return;
+            }
+
+            // If already signed in, load immediately
+            if (auth.currentUser) {
                 loadAllRecentlyPlayed();
                 return;
             }
 
-            // If auth is defined but no user yet, listen for changes
-            if (typeof auth !== 'undefined') {
-                // If already signed in, auth listener will fire; but we also need to handle initial state
-                const unsubscribe = auth.onAuthStateChanged(function(user) {
-                    if (user) {
-                        loadAllRecentlyPlayed();
-                        unsubscribe(); // clean up listener
-                    } else {
-                        // Not signed in
-                        const grid = document.getElementById('recently-played-grid');
-                        if (grid) {
-                            grid.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">Sign in to see your recently played games.</div>`;
-                        }
-                        unsubscribe();
+            // Otherwise, wait for sign‑in
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    loadAllRecentlyPlayed();
+                } else {
+                    // User not signed in – show message
+                    const grid = document.getElementById('recently-played-grid');
+                    if (grid) {
+                        grid.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">Sign in to see your recently played games.</div>`;
                     }
-                });
-            } else {
-                // Firebase not loaded yet, retry after a short delay
-                setTimeout(initRecentlyPlayed, 300);
-            }
+                }
+            });
         }
 
-        // Start when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initRecentlyPlayed);
-        } else {
-            initRecentlyPlayed();
-        }
+        // Start the process
+        initRecentlyPlayed();
     </script>
 </body>
 </html>
