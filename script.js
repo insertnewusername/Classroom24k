@@ -234,12 +234,15 @@ function logGamePlayed(gameId) {
     }
     const uid = currentUser.uid;
     console.log('👤 User UID:', uid);
-    const update = {};
-    update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
+    // Use nested map
+    const update = {
+        recentlyPlayed: {
+            [gameId]: firebase.firestore.FieldValue.serverTimestamp()
+        }
+    };
     return db.collection('users').doc(uid).set(update, { merge: true })
         .then(() => {
             console.log('✅ Game logged successfully:', gameId);
-            // Reload carousel after a short delay to ensure the listener picks up the new data
             setTimeout(() => {
                 loadRecentlyPlayed();
             }, 1000);
