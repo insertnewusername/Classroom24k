@@ -117,7 +117,6 @@ function setupAuthListener() {
         currentUser = user;
         updateAuthUI(user);
         if (user) {
-            // Create user document if it doesn't exist
             const uid = user.uid;
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
@@ -128,7 +127,10 @@ function setupAuthListener() {
                         pendingGameSetup = null;
                         setupGame(gameUrl, gameId);
                     }
-                    loadRecentlyPlayed();
+                    // Small delay to allow Firestore to sync
+                    setTimeout(() => {
+                        loadRecentlyPlayed();
+                    }, 500);
                 })
                 .catch(err => {
                     console.warn('⚠️ Could not create user document:', err);
@@ -137,7 +139,9 @@ function setupAuthListener() {
                         pendingGameSetup = null;
                         setupGame(gameUrl, gameId);
                     }
-                    loadRecentlyPlayed();
+                    setTimeout(() => {
+                        loadRecentlyPlayed();
+                    }, 500);
                 });
         } else {
             renderRecentlyPlayedCarousel(null);
