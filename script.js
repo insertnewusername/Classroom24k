@@ -59,20 +59,14 @@ const firebaseConfig = {
 let auth, db;
 
 function initFirebase() {
-    // Wait until the compat SDK scripts have loaded
     if (typeof firebase === 'undefined') {
         setTimeout(initFirebase, 300);
         return;
     }
-    // Initialize with compat style
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    
-    // Enable offline persistence (optional)
-    db.enablePersistence().catch(err => console.warn('Persistence:', err));
-    
-    // Start listening to auth state
+    // db.enablePersistence().catch(err => console.warn('Persistence:', err)); // commented out
     setupAuthListener();
 }
 
