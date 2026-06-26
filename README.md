@@ -1,12 +1,6 @@
 # Classroom24k.github.io
 Games
-Copyright (c)
-
-All rights reserved.
-
-No part of this repository, including any code, files, images, or content, may be copied, reproduced, cloned, modified, or distributed in any form without explicit permission from the copyright holder.
-
-Unauthorized use of this repository or its contents is strictly prohibited.
+Classroom 24k is a fun gaming website, where you can play all the games you want!. Explore the various games that the website holds, and have fun!
 
 Website link: https://insertnewusername.github.io/Classroom24k.github.io/
 
