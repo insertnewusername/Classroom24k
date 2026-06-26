@@ -82,9 +82,16 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-        setupGame("https://bloxdhop.io/");
-    </script>
+<script>
+fetch("https://classroom24kjs.yuchenliu-matthew.workers.dev/game/bloxd")
+  .then(r => r.json())
+  .then(data => setupGame(data.url))
+  .catch(() => {
+    document.getElementById("game-container").innerHTML =
+      "<p style='color:white;text-align:center;'>Game unavailable</p>";
+  });
+</script>
+
 
 </body>
 </html>
