@@ -239,7 +239,13 @@ function logGamePlayed(gameId) {
     const update = {};
     update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
     return db.collection('users').doc(uid).set(update, { merge: true })
-        .then(() => console.log('✅ Game logged successfully:', gameId))
+        .then(() => {
+            console.log('✅ Game logged successfully:', gameId);
+            // Wait a moment for Firestore to sync, then reload the carousel
+            setTimeout(() => {
+                loadRecentlyPlayed();
+            }, 1000);
+        })
         .catch(err => console.error('❌ Failed to log game:', err));
 }
 
