@@ -9,3 +9,5 @@ No part of this repository, including any code, files, images, or content, may b
 Unauthorized use of this repository or its contents is strictly prohibited.
 
 Website link: https://insertnewusername.github.io/Classroom24k.github.io/
+
+The use of some AI was used in the production of the javascript and css
