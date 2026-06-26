@@ -1,8 +1,8 @@
 /**
- * script.js - Classroom 24k - Final Master (Security & Loading Fix)
+ * script.js - Classroom 24k - Firebase + Recently Played (Clean)
  */
 
-// --- 0. DOMAIN LOCK (Anti-Steal) ---
+// ========== 0. DOMAIN LOCK ==========
 (function() {
     const authorized = "insertnewusername.github.io/Classroom24k.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
@@ -18,7 +18,7 @@
     }
 })();
 
-// --- 1. GOOGLE ANALYTICS ---
+// ========== 1. GOOGLE ANALYTICS ==========
 (function() {
     var gtagScript = document.createElement('script');
     gtagScript.async = true;
@@ -30,7 +30,269 @@
     gtag('config', 'G-2D22NMRV2Z');
 })();
 
-// --- 2. UNIVERSAL NAVIGATION ---
+// ========== 2. FIREBASE SDK (load dynamically) ==========
+(function loadFirebase() {
+    const scripts = [
+        'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+        'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
+    ];
+    scripts.forEach(src => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        document.head.appendChild(s);
+    });
+})();
+
+// ========== 3. FIREBASE CONFIG ==========
+const firebaseConfig = {
+    apiKey: "AIzaSyAdbHtBDapzbWg_-W1cPPoTBz_oTfny380",
+    authDomain: "classroom24k.firebaseapp.com",
+    projectId: "classroom24k",
+    storageBucket: "classroom24k.firebasestorage.app",
+    messagingSenderId: "360262202722",
+    appId: "1:360262202722:web:6decacd62f56fccf0c283b",
+    measurementId: "G-T7KSPP2T0H"   // optional – you can remove this line if you don't use Analytics
+};
+
+let auth, db;
+
+function initFirebase() {
+    // Wait until the compat SDK scripts have loaded
+    if (typeof firebase === 'undefined') {
+        setTimeout(initFirebase, 300);
+        return;
+    }
+    // Initialize with compat style
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    
+    // Enable offline persistence (optional)
+    db.enablePersistence().catch(err => console.warn('Persistence:', err));
+    
+    // Start listening to auth state
+    setupAuthListener();
+}
+
+// Start Firebase after DOM is ready (or immediately if it already is)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFirebase);
+} else {
+    initFirebase();
+}
+
+// ========== 4. GAME METADATA ==========
+const GAME_META = {
+    "bloxd-io": { title: "Bloxd.io", img: "https://cdn2.spatial.io/assets/v1/static/external_games/bloxd-io.jpeg" },
+    "slope": { title: "Slope", img: "https://slope2unblocked.github.io/images/logo.png" },
+    "tag": { title: "Tag", img: "https://abinbins.github.io/thumb/tag.png" },
+    "bumper-cars-soccer": { title: "Bumper Cars", img: "https://abinbins.github.io/thumb/bumper-cars-soccer.png" },
+    "rocket-soccer-derby": { title: "Rocket Derby Soccer", img: "https://aiptcomics.com/wp-content/uploads/2020/07/rocket-league.jpg" },
+    "retro-bowl": { title: "Retro Bowl", img: "assets/retro-bowl.png" },
+    "8-ball-pool": { title: "8 Ball Pool", img: "https://abinbins.github.io/thumb/8-ball-pool.png" },
+    "champions-league": { title: "Champions League", img: "https://abinbins.github.io/thumb/soccer-skills-champions-league.png" },
+    "rowdy-city-wrestling": { title: "Rowdy City Wrestling", img: "https://abinbins.github.io/thumb/rowdy-city-wrestling.png" },
+    "smash-karts": { title: "Smash Karts", img: "https://abinbins.github.io/thumb/smash-karts.png" },
+    "rowdy-wrestling": { title: "Rowdy Wrestling", img: "https://abinbins.github.io/thumb/rowdy-wrestling.png" },
+    "polytrack": { title: "Polytrack", img: "https://www.kizgame.com/thumbs/polytrack_small.webp" },
+    "cookie-clicker": { title: "Cookie Clicker", img: "https://abinbins.github.io/thumb/cookie-clicker.png" },
+    "world-cup": { title: "World Cup", img: "https://abinbins.github.io/thumb/soccer-skills-world-cup.png" },
+    "basketball-stars": { title: "Basketball Stars", img: "https://abinbins.github.io/thumb/basketball-stars.png" },
+    "euro-cup": { title: "Euro Cup", img: "https://abinbins.github.io/thumb/soccer-skills-euro-cup.png" },
+    "basket-random": { title: "Basket Random", img: "https://abinbins.github.io/thumb/basket-random.png" },
+    "stick-fighter": { title: "Stick Fighter", img: "https://abinbins.github.io/thumb/stick-fighter.png" },
+    "stickman-hook": { title: "Stickman Hook", img: "https://abinbins.github.io/thumb/stickman-hook.png" },
+    "tiny-fishing": { title: "Tiny Fishing", img: "https://abinbins.github.io/thumb/tiny-fishing.png" },
+    "city-car-driving": { title: "City Car Driving", img: "https://abinbins.github.io/thumb/city-car-driving-stunt-master.png" },
+    "raft-wars": { title: "Raft Wars", img: "https://abinbins.github.io/thumb/raft-wars.png" },
+    "learn-to-fly-2": { title: "Learn to Fly 2", img: "assets/learn-to-fly-2.png" },
+    "free-kick-shooter": { title: "Free Kick Shooter", img: "assets/free-kick-shooter.png" },
+    "javelin-fighting": { title: "Javelin Fighting", img: "https://cdn-1.webcatalog.io/catalog/poki-javelin-fighting/poki-javelin-fighting-icon-filled-256.png" },
+    "burnin-rubber-5-xs": { title: "Burnin Rubber 5 xs", img: "https://static.wikia.nocookie.net/xform-games/images/f/f5/Image347457599.png" },
+    "crossy-road": { title: "Crossy Road", img: "https://abinbins.github.io/thumb/crossy-road.png" }
+};
+
+// ========== 5. AUTH ==========
+let currentUser = null;
+
+function setupAuthListener() {
+    if (!auth) return;
+    auth.onAuthStateChanged(user => {
+        currentUser = user;
+        updateAuthUI(user);
+        if (user) {
+            loadRecentlyPlayed();
+        } else {
+            renderRecentlyPlayedCarousel(null);
+        }
+    });
+}
+
+function updateAuthUI(user) {
+    const section = document.getElementById('auth-section');
+    if (!section) return;
+    if (user) {
+        section.innerHTML = `
+            <span style="color:#00aaff; margin-right:10px;">${user.displayName || user.email}</span>
+            <button id="signOutBtn" class="auth-btn">Sign Out</button>
+        `;
+        document.getElementById('signOutBtn').addEventListener('click', () => auth.signOut());
+    } else {
+        section.innerHTML = `
+            <button id="signInBtn" class="auth-btn">Sign In</button>
+        `;
+        document.getElementById('signInBtn').addEventListener('click', showAuthModal);
+    }
+}
+
+function showAuthModal() {
+    const existing = document.getElementById('authModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'authModal';
+    modal.style.cssText = `
+        position: fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center;
+        z-index:9999;
+    `;
+    modal.innerHTML = `
+        <div style="background:#0d1b2e; padding:40px; border-radius:15px; width:350px; max-width:90%; border:2px solid #00aaff;">
+            <h2 style="color:#00aaff; margin-top:0;">Sign In / Sign Up</h2>
+            <input id="authEmail" type="email" placeholder="Email" style="width:100%; padding:10px; margin:10px 0; background:#081221; border:1px solid #1c426e; color:white; border-radius:5px;">
+            <input id="authPassword" type="password" placeholder="Password" style="width:100%; padding:10px; margin:10px 0; background:#081221; border:1px solid #1c426e; color:white; border-radius:5px;">
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+                <button id="authLoginBtn" class="auth-btn">Sign In</button>
+                <button id="authSignupBtn" class="auth-btn">Sign Up</button>
+                <button id="authCloseBtn" class="auth-btn" style="background:#555;">Close</button>
+            </div>
+            <div style="margin-top:15px; text-align:center; color:#aaa;">Or</div>
+            <button id="googleSignInBtn" class="auth-btn" style="width:100%; margin-top:10px; background:#fff; color:#000; border-color:#ddd;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px; vertical-align:middle; margin-right:8px;">
+                Sign in with Google
+            </button>
+            <div id="authMessage" style="color:#ff6b6b; margin-top:10px;"></div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Email/Password login
+    document.getElementById('authLoginBtn').addEventListener('click', () => {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => modal.remove())
+            .catch(err => document.getElementById('authMessage').textContent = err.message);
+    });
+
+    // Email/Password signup
+    document.getElementById('authSignupBtn').addEventListener('click', () => {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(() => modal.remove())
+            .catch(err => document.getElementById('authMessage').textContent = err.message);
+    });
+
+    // Google Sign-In
+    document.getElementById('googleSignInBtn').addEventListener('click', () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider)
+            .then(() => modal.remove())
+            .catch(err => document.getElementById('authMessage').textContent = err.message);
+    });
+
+    document.getElementById('authCloseBtn').addEventListener('click', () => modal.remove());
+}
+
+// ========== 6. FIREBASE: LOG GAME ==========
+function logGamePlayed(gameId) {
+    if (!auth || !currentUser) {
+        return Promise.resolve();
+    }
+    const uid = currentUser.uid;
+    const update = {};
+    update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
+    return db.collection('users').doc(uid).set(update, { merge: true })
+        .catch(err => console.warn('Failed to log game:', err));
+}
+
+// ========== 7. RECENTLY PLAYED ==========
+function loadRecentlyPlayed() {
+    if (!auth || !currentUser) {
+        renderRecentlyPlayedCarousel(null);
+        return;
+    }
+    const uid = currentUser.uid;
+    db.collection('users').doc(uid).get()
+        .then(doc => {
+            if (doc.exists && doc.data().recentlyPlayed) {
+                const data = doc.data().recentlyPlayed;
+                const sorted = Object.entries(data)
+                    .sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0))
+                    .map(([gameId]) => gameId);
+                renderRecentlyPlayedCarousel(sorted);
+            } else {
+                renderRecentlyPlayedCarousel([]);
+            }
+        })
+        .catch(err => {
+            console.warn('Error loading recently played:', err);
+            renderRecentlyPlayedCarousel([]);
+        });
+}
+
+function renderRecentlyPlayedCarousel(gameIds) {
+    const container = document.getElementById('recently-played-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!gameIds || gameIds.length === 0) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'padding: 40px; text-align:center; color:#aaa; font-size:1.2rem;';
+        msg.textContent = currentUser ? 'No games played yet. Go play something!' : 'Sign in to see your recently played games.';
+        container.appendChild(msg);
+        return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'carousel-wrapper';
+
+    const track = document.createElement('div');
+    track.className = 'carousel-track';
+
+    gameIds.forEach(gameId => {
+        const meta = GAME_META[gameId];
+        if (!meta) return;
+        const card = document.createElement('a');
+        card.className = 'game-card';
+        card.href = gameId + '.html';
+        card.innerHTML = `
+            <div class="game-img-container"><img src="${meta.img}" alt="${meta.title}"></div>
+            <div class="game-info"><h3>${meta.title}</h3></div>
+        `;
+        track.appendChild(card);
+    });
+
+    const leftBtn = document.createElement('button');
+    leftBtn.className = 'scroll-btn left-btn';
+    leftBtn.innerHTML = '&#10094;';
+    leftBtn.onclick = () => scrollCarousel(-1, leftBtn);
+
+    const rightBtn = document.createElement('button');
+    rightBtn.className = 'scroll-btn right-btn';
+    rightBtn.innerHTML = '&#10095;';
+    rightBtn.onclick = () => scrollCarousel(1, rightBtn);
+
+    wrapper.appendChild(leftBtn);
+    wrapper.appendChild(track);
+    wrapper.appendChild(rightBtn);
+    container.appendChild(wrapper);
+}
+
+// ========== 8. NAVIGATION ==========
 function generateNav() {
     const nav = document.querySelector('nav');
     if (!nav) return;
@@ -47,60 +309,17 @@ function generateNav() {
             <a href="sports.html">Sports</a>
             <a href="stickman.html">Stickman</a>
         </div>
+        <div id="auth-section"></div>
     `;
 }
 
-// --- 3. SEARCH LOGIC ---
-function filterGames() {
-    let inputField = document.getElementById('gameSearch');
-    if (!inputField) return;
-    
-    let input = inputField.value.toLowerCase();
-    const isMainLibrary = window.location.pathname.endsWith('index.html') || 
-                          window.location.pathname === '/' || 
-                          window.location.pathname.endsWith('.html') === false;
-    
-    if (document.getElementById('game-container') || !isMainLibrary) {
-        if (input.length > 0) {
-            window.location.href = "index.html?search=" + encodeURIComponent(input);
-            return;
-        }
+// ========== 9. GAME LOADING (with logging) ==========
+function setupGame(gameUrl, gameId) {
+    if (gameId) {
+        logGamePlayed(gameId);
     }
-
-    let cards = document.getElementsByClassName('game-card');
-    const featured = document.querySelector('.featured-banner');
-    const carousels = document.querySelectorAll('.carousel-container');
-    const libraryHeaders = document.querySelectorAll('.full-library-section h2');
-
-    if (input.length > 0) {
-        if (featured) featured.style.display = "none";
-        carousels.forEach(c => c.style.display = "none");
-        libraryHeaders.forEach(h => h.style.display = "none");
-    } else {
-        if (featured) featured.style.display = "";
-        carousels.forEach(c => c.style.display = "");
-        libraryHeaders.forEach(h => h.style.display = "");
-    }
-
-    for (let card of cards) {
-        let title = card.querySelector('h3').innerText.toLowerCase();
-        card.style.display = title.includes(input) ? "flex" : "none";
-    }
-}
-
-// --- 4. CAROUSEL LOGIC ---
-function scrollCarousel(direction, btn) {
-    const wrapper = btn.closest('.carousel-container');
-    const track = wrapper.querySelector('.carousel-track');
-    const scrollStep = 900; 
-    track.scrollBy({ left: direction * scrollStep, behavior: 'smooth' });
-}
-
-// --- 5. GAME LOADING ---
-function setupGame(gameUrl) {
     const container = document.getElementById('game-container');
     if (!container) return;
-    
     container.innerHTML = `
         <div class="iframe-hover-zone" onclick="loadIframe('${gameUrl}')">
             <div class="play-content">
@@ -115,7 +334,6 @@ function loadIframe(url) {
     container.innerHTML = `<iframe id="game-frame" src="${url}" allowfullscreen="true"></iframe>`;
 }
 
-// FIXED: Always request fullscreen on the container so the CSS border-hide works
 function openFullscreen() {
     const container = document.getElementById("game-container");
     if (container) {
@@ -125,24 +343,57 @@ function openFullscreen() {
     }
 }
 
-// --- 6. INITIALIZATION ---
+// ========== 10. SEARCH ==========
+function filterGames() {
+    let inputField = document.getElementById('gameSearch');
+    if (!inputField) return;
+    let input = inputField.value.toLowerCase();
+    const isMainLibrary = window.location.pathname.endsWith('index.html') || 
+                          window.location.pathname === '/' || 
+                          !window.location.pathname.includes('.html');
+    if (document.getElementById('game-container') || !isMainLibrary) {
+        if (input.length > 0) {
+            window.location.href = "index.html?search=" + encodeURIComponent(input);
+            return;
+        }
+    }
+    let cards = document.getElementsByClassName('game-card');
+    const featured = document.querySelector('.featured-banner');
+    const carousels = document.querySelectorAll('.carousel-container');
+    const libraryHeaders = document.querySelectorAll('.full-library-section h2');
+    if (input.length > 0) {
+        if (featured) featured.style.display = "none";
+        carousels.forEach(c => c.style.display = "none");
+        libraryHeaders.forEach(h => h.style.display = "none");
+    } else {
+        if (featured) featured.style.display = "";
+        carousels.forEach(c => c.style.display = "");
+        libraryHeaders.forEach(h => h.style.display = "");
+    }
+    for (let card of cards) {
+        let title = card.querySelector('h3')?.innerText?.toLowerCase() || '';
+        card.style.display = title.includes(input) ? "flex" : "none";
+    }
+}
+
+// ========== 11. CAROUSEL SCROLL ==========
+function scrollCarousel(direction, btn) {
+    const wrapper = btn.closest('.carousel-wrapper');
+    const track = wrapper.querySelector('.carousel-track');
+    const scrollStep = 900;
+    track.scrollBy({ left: direction * scrollStep, behavior: 'smooth' });
+}
+
+// ========== 12. INIT ==========
 window.addEventListener('DOMContentLoaded', () => {
     generateNav();
-    
     const urlParams = new URLSearchParams(window.location.search);
     const searchVal = urlParams.get('search');
     if (searchVal) {
         const input = document.getElementById('gameSearch');
-        if (input) { 
-            input.value = searchVal; 
-            setTimeout(filterGames, 150); 
+        if (input) {
+            input.value = searchVal;
+            setTimeout(filterGames, 150);
         }
     }
-
-    document.querySelectorAll('.left-btn').forEach(btn => {
-        btn.onclick = () => scrollCarousel(-1, btn);
-    });
-    document.querySelectorAll('.right-btn').forEach(btn => {
-        btn.onclick = () => scrollCarousel(1, btn);
-    });
 });
