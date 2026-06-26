@@ -2,7 +2,8 @@
  * script.js - Classroom 24k - Firebase + Recently Played (Clean)
  */
 
-// ========== 0. DOMAIN LOCK ==========
+
+// ========== 0. DOMAIN LOCK (CASE-INSENSITIVE) ==========
 (function() {
     const authorized = "insertnewusername.github.io/Classroom24k.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
@@ -17,7 +18,6 @@
         throw new Error("Script terminated: Unauthorized Domain.");
     }
 })();
-
 // ========== 1. GOOGLE ANALYTICS ==========
 (function() {
     var gtagScript = document.createElement('script');
@@ -53,7 +53,7 @@ const firebaseConfig = {
     storageBucket: "classroom24k.firebasestorage.app",
     messagingSenderId: "360262202722",
     appId: "1:360262202722:web:6decacd62f56fccf0c283b",
-    measurementId: "G-T7KSPP2T0H"   // optional – you can remove this line if you don't use Analytics
+    measurementId: "G-T7KSPP2T0H"
 };
 
 let auth, db;
@@ -66,11 +66,10 @@ function initFirebase() {
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    // db.enablePersistence().catch(err => console.warn('Persistence:', err)); // commented out
+    // Do NOT call enablePersistence() – it can cause offline errors
     setupAuthListener();
 }
 
-// Start Firebase after DOM is ready (or immediately if it already is)
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initFirebase);
 } else {
@@ -117,7 +116,17 @@ function setupAuthListener() {
         currentUser = user;
         updateAuthUI(user);
         if (user) {
-            loadRecentlyPlayed();
+            // Create user document if it doesn't exist
+            const uid = user.uid;
+            db.collection('users').doc(uid).set({}, { merge: true })
+                .then(() => {
+                    console.log('User document ready');
+                    loadRecentlyPlayed();
+                })
+                .catch(err => {
+                    console.warn('Could not create user document:', err);
+                    loadRecentlyPlayed(); // still try to read
+                });
         } else {
             renderRecentlyPlayedCarousel(null);
         }
@@ -141,6 +150,7 @@ function updateAuthUI(user) {
     }
 }
 
+// ========== 6. AUTH MODAL (NICER VERSION) ==========
 function showAuthModal() {
     const existing = document.getElementById('authModal');
     if (existing) existing.remove();
@@ -149,30 +159,31 @@ function showAuthModal() {
     modal.id = 'authModal';
     modal.style.cssText = `
         position: fixed; top:0; left:0; width:100%; height:100%;
-        background: rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center;
-        z-index:9999;
+        background: rgba(8, 18, 33, 0.85); backdrop-filter: blur(6px);
+        display:flex; align-items:center; justify-content:center; z-index:9999;
+        animation: fadeIn 0.3s ease;
     `;
     modal.innerHTML = `
-        <div style="background:#0d1b2e; padding:40px; border-radius:15px; width:350px; max-width:90%; border:2px solid #00aaff;">
-            <h2 style="color:#00aaff; margin-top:0;">Sign In / Sign Up</h2>
-            <input id="authEmail" type="email" placeholder="Email" style="width:100%; padding:10px; margin:10px 0; background:#081221; border:1px solid #1c426e; color:white; border-radius:5px;">
-            <input id="authPassword" type="password" placeholder="Password" style="width:100%; padding:10px; margin:10px 0; background:#081221; border:1px solid #1c426e; color:white; border-radius:5px;">
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-                <button id="authLoginBtn" class="auth-btn">Sign In</button>
-                <button id="authSignupBtn" class="auth-btn">Sign Up</button>
-                <button id="authCloseBtn" class="auth-btn" style="background:#555;">Close</button>
+        <div style="background:#0d1b2e; padding:30px 35px 35px; border-radius:20px; width:380px; max-width:92%; border:2px solid #00aaff; box-shadow:0 0 40px rgba(0,170,255,0.2); position:relative;">
+            <button id="authCloseBtn" style="position:absolute; top:12px; right:16px; background:transparent; border:none; color:#aaa; font-size:24px; cursor:pointer; transition:0.2s;">✕</button>
+            <h2 style="color:#00aaff; margin:0 0 20px 0; text-align:center; letter-spacing:1px;">Welcome Back</h2>
+            <input id="authEmail" type="email" placeholder="Email" style="width:100%; padding:12px 16px; margin:10px 0; background:#081221; border:1px solid #1c426e; border-radius:8px; color:white; font-size:1rem; box-sizing:border-box; outline:none; transition:0.3s;" onfocus="this.style.borderColor='#00aaff'" onblur="this.style.borderColor='#1c426e'">
+            <input id="authPassword" type="password" placeholder="Password" style="width:100%; padding:12px 16px; margin:10px 0; background:#081221; border:1px solid #1c426e; border-radius:8px; color:white; font-size:1rem; box-sizing:border-box; outline:none; transition:0.3s;" onfocus="this.style.borderColor='#00aaff'" onblur="this.style.borderColor='#1c426e'">
+            <div style="display:flex; gap:12px; justify-content:center; margin-top:18px;">
+                <button id="authLoginBtn" class="auth-btn" style="flex:1;">Sign In</button>
+                <button id="authSignupBtn" class="auth-btn" style="flex:1; background:#1c426e;">Sign Up</button>
             </div>
-            <div style="margin-top:15px; text-align:center; color:#aaa;">Or</div>
-            <button id="googleSignInBtn" class="auth-btn" style="width:100%; margin-top:10px; background:#fff; color:#000; border-color:#ddd;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px; vertical-align:middle; margin-right:8px;">
+            <div style="margin:20px 0 12px; text-align:center; color:#888; font-size:0.9rem;">— or —</div>
+            <button id="googleSignInBtn" class="auth-btn" style="width:100%; background:#fff; color:#333; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; gap:10px; padding:10px; font-weight:500; transition:0.3s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='#fff'">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:22px; height:22px;">
                 Sign in with Google
             </button>
-            <div id="authMessage" style="color:#ff6b6b; margin-top:10px;"></div>
+            <div id="authMessage" style="color:#ff6b6b; margin-top:15px; text-align:center; font-size:0.95rem;"></div>
         </div>
     `;
     document.body.appendChild(modal);
 
-    // Email/Password login
+    document.getElementById('authCloseBtn').addEventListener('click', () => modal.remove());
     document.getElementById('authLoginBtn').addEventListener('click', () => {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
@@ -180,8 +191,6 @@ function showAuthModal() {
             .then(() => modal.remove())
             .catch(err => document.getElementById('authMessage').textContent = err.message);
     });
-
-    // Email/Password signup
     document.getElementById('authSignupBtn').addEventListener('click', () => {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPassword').value;
@@ -189,19 +198,18 @@ function showAuthModal() {
             .then(() => modal.remove())
             .catch(err => document.getElementById('authMessage').textContent = err.message);
     });
-
-    // Google Sign-In
     document.getElementById('googleSignInBtn').addEventListener('click', () => {
         const provider = new firebase.auth.GoogleAuthProvider();
         auth.signInWithPopup(provider)
             .then(() => modal.remove())
             .catch(err => document.getElementById('authMessage').textContent = err.message);
     });
-
-    document.getElementById('authCloseBtn').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
 }
 
-// ========== 6. FIREBASE: LOG GAME ==========
+// ========== 7. FIREBASE: LOG GAME ==========
 function logGamePlayed(gameId) {
     if (!auth || !currentUser) {
         return Promise.resolve();
@@ -213,7 +221,7 @@ function logGamePlayed(gameId) {
         .catch(err => console.warn('Failed to log game:', err));
 }
 
-// ========== 7. RECENTLY PLAYED ==========
+// ========== 8. RECENTLY PLAYED (with Retry) ==========
 function loadRecentlyPlayed() {
     if (!auth || !currentUser) {
         renderRecentlyPlayedCarousel(null);
@@ -234,7 +242,20 @@ function loadRecentlyPlayed() {
         })
         .catch(err => {
             console.warn('Error loading recently played:', err);
-            renderRecentlyPlayedCarousel([]);
+            // Show a retry button instead of just "No games"
+            const container = document.getElementById('recently-played-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">
+                        Could not load your recently played games.
+                        <button onclick="loadRecentlyPlayed()" style="
+                            background:#00aaff; color:#081221; border:none;
+                            padding:8px 20px; border-radius:30px; cursor:pointer;
+                            font-weight:bold; margin-top:10px;
+                        ">Retry</button>
+                    </div>
+                `;
+            }
         });
 }
 
@@ -286,7 +307,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
     container.appendChild(wrapper);
 }
 
-// ========== 8. NAVIGATION ==========
+// ========== 9. NAVIGATION ==========
 function generateNav() {
     const nav = document.querySelector('nav');
     if (!nav) return;
@@ -307,7 +328,7 @@ function generateNav() {
     `;
 }
 
-// ========== 9. GAME LOADING (with logging) ==========
+// ========== 10. GAME LOADING (with logging) ==========
 function setupGame(gameUrl, gameId) {
     if (gameId) {
         logGamePlayed(gameId);
@@ -337,7 +358,7 @@ function openFullscreen() {
     }
 }
 
-// ========== 10. SEARCH ==========
+// ========== 11. SEARCH ==========
 function filterGames() {
     let inputField = document.getElementById('gameSearch');
     if (!inputField) return;
@@ -370,7 +391,7 @@ function filterGames() {
     }
 }
 
-// ========== 11. CAROUSEL SCROLL ==========
+// ========== 12. CAROUSEL SCROLL ==========
 function scrollCarousel(direction, btn) {
     const wrapper = btn.closest('.carousel-wrapper');
     const track = wrapper.querySelector('.carousel-track');
@@ -378,7 +399,7 @@ function scrollCarousel(direction, btn) {
     track.scrollBy({ left: direction * scrollStep, behavior: 'smooth' });
 }
 
-// ========== 12. INIT ==========
+// ========== 13. INIT ==========
 window.addEventListener('DOMContentLoaded', () => {
     generateNav();
     const urlParams = new URLSearchParams(window.location.search);
