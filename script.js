@@ -109,28 +109,27 @@ const GAME_META = {
 
 // ========== 5. AUTH ==========
 let currentUser = null;
-let pendingGameSetup = null; // queue for game setup calls before auth is ready
+let pendingGameSetup = null;
+let unsubscribeRecentlyPlayed = null;
 
 function setupAuthListener() {
     if (!auth) return;
     auth.onAuthStateChanged(user => {
         currentUser = user;
         updateAuthUI(user);
+
         if (user) {
             const uid = user.uid;
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
                     console.log('✅ User document ready');
-                    // If there's a pending game setup, run it now
                     if (pendingGameSetup) {
                         const { gameUrl, gameId } = pendingGameSetup;
                         pendingGameSetup = null;
                         setupGame(gameUrl, gameId);
                     }
-                    // Small delay to allow Firestore to sync
-                    setTimeout(() => {
-                        loadRecentlyPlayed();
-                    }, 500);
+                    // Start real‑time listener
+                    loadRecentlyPlayed();
                 })
                 .catch(err => {
                     console.warn('⚠️ Could not create user document:', err);
@@ -139,11 +138,14 @@ function setupAuthListener() {
                         pendingGameSetup = null;
                         setupGame(gameUrl, gameId);
                     }
-                    setTimeout(() => {
-                        loadRecentlyPlayed();
-                    }, 500);
+                    loadRecentlyPlayed();
                 });
         } else {
+            // User signed out – clean up listener
+            if (unsubscribeRecentlyPlayed) {
+                unsubscribeRecentlyPlayed();
+                unsubscribeRecentlyPlayed = null;
+            }
             renderRecentlyPlayedCarousel(null);
         }
     });
@@ -241,16 +243,24 @@ function logGamePlayed(gameId) {
         .catch(err => console.error('❌ Failed to log game:', err));
 }
 
-// ========== 8. RECENTLY PLAYED ==========
+// ========== 8. RECENTLY PLAYED (Real-time listener) ==========
 function loadRecentlyPlayed() {
-    console.log('📂 loadRecentlyPlayed called');
+    // Remove any previous listener
+    if (unsubscribeRecentlyPlayed) {
+        unsubscribeRecentlyPlayed();
+        unsubscribeRecentlyPlayed = null;
+    }
+
     if (!auth || !currentUser) {
         renderRecentlyPlayedCarousel(null);
         return;
     }
+
     const uid = currentUser.uid;
-    db.collection('users').doc(uid).get()
-        .then(doc => {
+
+    // Start real‑time listener
+    unsubscribeRecentlyPlayed = db.collection('users').doc(uid)
+        .onSnapshot(doc => {
             if (doc.exists && doc.data().recentlyPlayed) {
                 const data = doc.data().recentlyPlayed;
                 const sorted = Object.entries(data)
@@ -260,22 +270,9 @@ function loadRecentlyPlayed() {
             } else {
                 renderRecentlyPlayedCarousel([]);
             }
-        })
-        .catch(err => {
-            console.warn('⚠️ Error loading recently played:', err);
-            const container = document.getElementById('recently-played-container');
-            if (container) {
-                container.innerHTML = `
-                    <div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">
-                        Could not load your recently played games.
-                        <button onclick="loadRecentlyPlayed()" style="
-                            background:#00aaff; color:#081221; border:none;
-                            padding:8px 20px; border-radius:30px; cursor:pointer;
-                            font-weight:bold; margin-top:10px;
-                        ">Retry</button>
-                    </div>
-                `;
-            }
+        }, error => {
+            console.warn('⚠️ Real‑time listener error:', error);
+            renderRecentlyPlayedCarousel([]);
         });
 }
 
@@ -352,13 +349,11 @@ function generateNav() {
 // ========== 10. GAME LOADING (with queuing) ==========
 function setupGame(gameUrl, gameId) {
     console.log('🎮 setupGame called with:', gameUrl, gameId);
-    // If Firebase isn't ready or user isn't signed in, queue the setup
     if (!auth || !currentUser) {
         console.warn('⏳ Firebase or user not ready – queuing setup for later');
         pendingGameSetup = { gameUrl, gameId };
         return;
     }
-    // Proceed with logging and rendering
     if (gameId) {
         logGamePlayed(gameId);
     }
