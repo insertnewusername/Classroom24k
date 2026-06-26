@@ -4,7 +4,7 @@
 
 // --- 0. DOMAIN LOCK (Anti-Steal) ---
 (function() {
-    const authorized = "https://classroom24k-github-io.vercel.app/";
+    const authorized = "https://classroom24k-github-io.vercel.app";
     const currentLoc = window.location.hostname + window.location.pathname;
 
     // Allows 'localhost' for your development, but breaks on any other domain
