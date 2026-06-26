@@ -66,7 +66,6 @@ function initFirebase() {
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    // No enablePersistence – avoids offline issues
     setupAuthListener();
 }
 
@@ -80,7 +79,6 @@ if (document.readyState === 'loading') {
 const GAME_META = {
     "bloxd-io": { title: "Bloxd.io", img: "https://cdn2.spatial.io/assets/v1/static/external_games/bloxd-io.jpeg" },
     "slope": { title: "Slope", img: "https://slope2unblocked.github.io/images/logo.png" },
-    "basket-random": { title: "Basket Random", img: "https://abinbins.github.io/thumb/basket-random.png" },
     "tag": { title: "Tag", img: "https://abinbins.github.io/thumb/tag.png" },
     "bumper-cars-soccer": { title: "Bumper Cars", img: "https://abinbins.github.io/thumb/bumper-cars-soccer.png" },
     "rocket-soccer-derby": { title: "Rocket Derby Soccer", img: "https://aiptcomics.com/wp-content/uploads/2020/07/rocket-league.jpg" },
@@ -240,7 +238,9 @@ function logGamePlayed(gameId) {
     return db.collection('users').doc(uid).set(update, { merge: true })
         .then(() => {
             console.log('✅ Game logged successfully:', gameId);
-            // Reload carousel after a short delay to ensure the listener picks up the new data
+            // Trim old entries (keep 20)
+            trimRecentlyPlayed(uid);
+            // Reload carousel after 1s
             setTimeout(() => {
                 loadRecentlyPlayed();
             }, 1000);
@@ -248,9 +248,29 @@ function logGamePlayed(gameId) {
         .catch(err => console.error('❌ Failed to log game:', err));
 }
 
-// ========== 8. RECENTLY PLAYED (with debug) ==========
+// ========== 8. TRIM RECENTLY PLAYED (keep 20) ==========
+function trimRecentlyPlayed(uid) {
+    return db.collection('users').doc(uid).get()
+        .then(doc => {
+            if (!doc.exists || !doc.data().recentlyPlayed) return;
+            const data = doc.data().recentlyPlayed;
+            const entries = Object.entries(data);
+            if (entries.length <= 20) return;
+            entries.sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0));
+            const top20 = entries.slice(0, 20);
+            const trimmed = {};
+            top20.forEach(([gameId, timestamp]) => {
+                trimmed[gameId] = timestamp;
+            });
+            return db.collection('users').doc(uid).update({
+                recentlyPlayed: trimmed
+            });
+        })
+        .catch(err => console.warn('⚠️ Could not trim recently played:', err));
+}
+
+// ========== 9. RECENTLY PLAYED CAROUSEL ==========
 function loadRecentlyPlayed() {
-    // Remove any previous listener
     if (unsubscribeRecentlyPlayed) {
         unsubscribeRecentlyPlayed();
         unsubscribeRecentlyPlayed = null;
@@ -264,7 +284,7 @@ function loadRecentlyPlayed() {
     const uid = currentUser.uid;
     const docRef = db.collection('users').doc(uid);
 
-    // First, force a fresh read from the server to get the latest data
+    // First, force a fresh read from the server
     docRef.get({ source: 'server' })
         .then(doc => {
             if (doc.exists && doc.data().recentlyPlayed) {
@@ -277,8 +297,7 @@ function loadRecentlyPlayed() {
                 renderRecentlyPlayedCarousel([]);
             }
         })
-        .catch(err => {
-            console.warn('⚠️ Could not fetch from server, using cache:', err);
+        .catch(() => {
             // Fallback to cache
             docRef.get()
                 .then(doc => {
@@ -294,7 +313,7 @@ function loadRecentlyPlayed() {
                 });
         });
 
-    // Now set up a real‑time listener for future updates
+    // Real‑time listener for updates
     unsubscribeRecentlyPlayed = docRef.onSnapshot({ includeMetadataChanges: true }, doc => {
         console.log('📄 Snapshot data (live):', doc.data());
         if (doc.exists && doc.data().recentlyPlayed) {
@@ -304,9 +323,6 @@ function loadRecentlyPlayed() {
                 .map(([gameId]) => gameId);
             renderRecentlyPlayedCarousel(sorted);
         } else {
-            // Don't clear the carousel if we already have data – avoid flickering
-            // Only update if the carousel is empty or we want to show "No games"
-            // We'll keep it as is: render empty only if it's truly empty
             renderRecentlyPlayedCarousel([]);
         }
     }, error => {
@@ -334,6 +350,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
     const track = document.createElement('div');
     track.className = 'carousel-track';
 
+    // Add game cards
     gameIds.forEach(gameId => {
         const meta = GAME_META[gameId];
         if (!meta) return;
@@ -347,6 +364,44 @@ function renderRecentlyPlayedCarousel(gameIds) {
         track.appendChild(card);
     });
 
+    // Add "More" card
+    const moreCard = document.createElement('a');
+    moreCard.className = 'game-card';
+    moreCard.href = 'recently-played.html';
+    moreCard.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #0d1b2e;
+        border: 2px dashed #00aaff;
+        color: #00aaff;
+        font-weight: bold;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: 0.3s;
+        width: 200px;
+        height: 210px;
+        border-radius: 12px;
+        flex-shrink: 0;
+    `;
+    moreCard.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 5px;">+</div>
+        <div>More</div>
+    `;
+    moreCard.onmouseover = () => {
+        moreCard.style.borderColor = '#ffffff';
+        moreCard.style.color = '#ffffff';
+        moreCard.style.transform = 'scale(1.05)';
+    };
+    moreCard.onmouseout = () => {
+        moreCard.style.borderColor = '#00aaff';
+        moreCard.style.color = '#00aaff';
+        moreCard.style.transform = 'scale(1)';
+    };
+    track.appendChild(moreCard);
+
+    // Scroll buttons
     const leftBtn = document.createElement('button');
     leftBtn.className = 'scroll-btn left-btn';
     leftBtn.innerHTML = '&#10094;';
@@ -363,7 +418,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
     container.appendChild(wrapper);
 }
 
-// ========== 9. NAVIGATION ==========
+// ========== 10. NAVIGATION ==========
 function generateNav() {
     const nav = document.querySelector('nav');
     if (!nav) return;
@@ -384,7 +439,7 @@ function generateNav() {
     `;
 }
 
-// ========== 10. GAME LOADING (with queuing) ==========
+// ========== 11. GAME LOADING (with queuing) ==========
 function setupGame(gameUrl, gameId) {
     console.log('🎮 setupGame called with:', gameUrl, gameId);
     if (!auth || !currentUser) {
@@ -420,7 +475,62 @@ function openFullscreen() {
     }
 }
 
-// ========== 11. SEARCH ==========
+// ========== 12. RECENTLY PLAYED FULL PAGE ==========
+function loadAllRecentlyPlayed() {
+    if (!auth || !currentUser) {
+        const grid = document.getElementById('recently-played-grid');
+        if (grid) {
+            grid.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">Sign in to see your recently played games.</div>`;
+        }
+        return;
+    }
+    const uid = currentUser.uid;
+    db.collection('users').doc(uid).get()
+        .then(doc => {
+            if (doc.exists && doc.data().recentlyPlayed) {
+                const data = doc.data().recentlyPlayed;
+                const sorted = Object.entries(data)
+                    .sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0))
+                    .map(([gameId]) => gameId);
+                renderAllRecentlyPlayed(sorted);
+            } else {
+                renderAllRecentlyPlayed([]);
+            }
+        })
+        .catch(err => {
+            console.warn('⚠️ Error loading all recently played:', err);
+            const grid = document.getElementById('recently-played-grid');
+            if (grid) {
+                grid.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">Could not load games. <button onclick="loadAllRecentlyPlayed()" style="background:#00aaff; color:#081221; border:none; padding:8px 20px; border-radius:30px; cursor:pointer; font-weight:bold; margin-top:10px;">Retry</button></div>`;
+            }
+        });
+}
+
+function renderAllRecentlyPlayed(gameIds) {
+    const grid = document.getElementById('recently-played-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    if (!gameIds || gameIds.length === 0) {
+        grid.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">No games played yet. Go play something!</div>`;
+        return;
+    }
+
+    gameIds.forEach(gameId => {
+        const meta = GAME_META[gameId];
+        if (!meta) return;
+        const card = document.createElement('a');
+        card.className = 'game-card';
+        card.href = gameId + '.html';
+        card.innerHTML = `
+            <div class="game-img-container"><img src="${meta.img}" alt="${meta.title}"></div>
+            <div class="game-info"><h3>${meta.title}</h3></div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// ========== 13. SEARCH ==========
 function filterGames() {
     let inputField = document.getElementById('gameSearch');
     if (!inputField) return;
@@ -453,7 +563,7 @@ function filterGames() {
     }
 }
 
-// ========== 12. CAROUSEL SCROLL ==========
+// ========== 14. CAROUSEL SCROLL ==========
 function scrollCarousel(direction, btn) {
     const wrapper = btn.closest('.carousel-wrapper');
     const track = wrapper.querySelector('.carousel-track');
@@ -461,7 +571,7 @@ function scrollCarousel(direction, btn) {
     track.scrollBy({ left: direction * scrollStep, behavior: 'smooth' });
 }
 
-// ========== 13. INIT ==========
+// ========== 15. INIT ==========
 window.addEventListener('DOMContentLoaded', () => {
     generateNav();
     const urlParams = new URLSearchParams(window.location.search);
