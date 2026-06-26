@@ -7,6 +7,8 @@ Website link: https://insertnewusername.github.io/Classroom24k.github.io/
 
 Getting started: Getting started with the game is easy. Just click on the link and play!
 
+Please note: The sign in feature, as well as recently played games carousel are still under development. They may not work properly, and I am striving to work on their development
+
 Acknowledgement: The use of some AI (Gemini) was used in the production of the javascript and css
 
 
