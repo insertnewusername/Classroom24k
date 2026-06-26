@@ -14,3 +14,4 @@ Homescreen:
 Playing a game:
 <img width="1918" height="870" alt="Screenshot 2026-06-26 143544" src="https://github.com/user-attachments/assets/371587c6-1173-40d7-a174-731aa22db0b1" />
 
+This is a project for #horizons
