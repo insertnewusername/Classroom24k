@@ -80,6 +80,7 @@ if (document.readyState === 'loading') {
 const GAME_META = {
     "bloxd-io": { title: "Bloxd.io", img: "https://cdn2.spatial.io/assets/v1/static/external_games/bloxd-io.jpeg" },
     "slope": { title: "Slope", img: "https://slope2unblocked.github.io/images/logo.png" },
+    "basket-random": { title: "Basket Random", img: "https://abinbins.github.io/thumb/basket-random.png" },
     "tag": { title: "Tag", img: "https://abinbins.github.io/thumb/tag.png" },
     "bumper-cars-soccer": { title: "Bumper Cars", img: "https://abinbins.github.io/thumb/bumper-cars-soccer.png" },
     "rocket-soccer-derby": { title: "Rocket Derby Soccer", img: "https://aiptcomics.com/wp-content/uploads/2020/07/rocket-league.jpg" },
@@ -234,15 +235,12 @@ function logGamePlayed(gameId) {
     }
     const uid = currentUser.uid;
     console.log('👤 User UID:', uid);
-    // Use nested map
-    const update = {
-        recentlyPlayed: {
-            [gameId]: firebase.firestore.FieldValue.serverTimestamp()
-        }
-    };
+    const update = {};
+    update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
     return db.collection('users').doc(uid).set(update, { merge: true })
         .then(() => {
             console.log('✅ Game logged successfully:', gameId);
+            // Reload carousel after a short delay to ensure the listener picks up the new data
             setTimeout(() => {
                 loadRecentlyPlayed();
             }, 1000);
@@ -315,6 +313,7 @@ function loadRecentlyPlayed() {
         console.warn('⚠️ Real‑time listener error:', error);
     });
 }
+
 function renderRecentlyPlayedCarousel(gameIds) {
     console.log('🖼️ renderRecentlyPlayedCarousel with:', gameIds);
     const container = document.getElementById('recently-played-container');
