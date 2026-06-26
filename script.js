@@ -66,7 +66,7 @@ function initFirebase() {
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    // Do NOT call enablePersistence() – it causes offline issues.
+    // No enablePersistence – avoids offline issues
     setupAuthListener();
 }
 
@@ -128,7 +128,6 @@ function setupAuthListener() {
                         pendingGameSetup = null;
                         setupGame(gameUrl, gameId);
                     }
-                    // Start real‑time listener
                     loadRecentlyPlayed();
                 })
                 .catch(err => {
@@ -141,7 +140,6 @@ function setupAuthListener() {
                     loadRecentlyPlayed();
                 });
         } else {
-            // User signed out – clean up listener
             if (unsubscribeRecentlyPlayed) {
                 unsubscribeRecentlyPlayed();
                 unsubscribeRecentlyPlayed = null;
@@ -241,7 +239,7 @@ function logGamePlayed(gameId) {
     return db.collection('users').doc(uid).set(update, { merge: true })
         .then(() => {
             console.log('✅ Game logged successfully:', gameId);
-            // Wait a moment for Firestore to sync, then reload the carousel
+            // Reload carousel after a short delay to ensure the listener picks up the new data
             setTimeout(() => {
                 loadRecentlyPlayed();
             }, 1000);
@@ -249,9 +247,8 @@ function logGamePlayed(gameId) {
         .catch(err => console.error('❌ Failed to log game:', err));
 }
 
-// ========== 8. RECENTLY PLAYED (Real-time listener) ==========
+// ========== 8. RECENTLY PLAYED (with debug) ==========
 function loadRecentlyPlayed() {
-    // Remove any previous listener
     if (unsubscribeRecentlyPlayed) {
         unsubscribeRecentlyPlayed();
         unsubscribeRecentlyPlayed = null;
@@ -264,9 +261,10 @@ function loadRecentlyPlayed() {
 
     const uid = currentUser.uid;
 
-    // Start real‑time listener
+    // Attach a real‑time listener with metadata
     unsubscribeRecentlyPlayed = db.collection('users').doc(uid)
-        .onSnapshot(doc => {
+        .onSnapshot({ includeMetadataChanges: true }, doc => {
+            console.log('📄 Snapshot data:', doc.data()); // DEBUG: see what we get
             if (doc.exists && doc.data().recentlyPlayed) {
                 const data = doc.data().recentlyPlayed;
                 const sorted = Object.entries(data)
