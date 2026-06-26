@@ -66,7 +66,7 @@ function initFirebase() {
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    // Do NOT call enablePersistence() – it can cause offline errors
+    // Do NOT call enablePersistence() – it causes offline issues.
     setupAuthListener();
 }
 
@@ -109,6 +109,7 @@ const GAME_META = {
 
 // ========== 5. AUTH ==========
 let currentUser = null;
+let pendingGameSetup = null; // queue for game setup calls before auth is ready
 
 function setupAuthListener() {
     if (!auth) return;
@@ -120,12 +121,23 @@ function setupAuthListener() {
             const uid = user.uid;
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
-                    console.log('User document ready');
+                    console.log('✅ User document ready');
+                    // If there's a pending game setup, run it now
+                    if (pendingGameSetup) {
+                        const { gameUrl, gameId } = pendingGameSetup;
+                        pendingGameSetup = null;
+                        setupGame(gameUrl, gameId);
+                    }
                     loadRecentlyPlayed();
                 })
                 .catch(err => {
-                    console.warn('Could not create user document:', err);
-                    loadRecentlyPlayed(); // still try to read
+                    console.warn('⚠️ Could not create user document:', err);
+                    if (pendingGameSetup) {
+                        const { gameUrl, gameId } = pendingGameSetup;
+                        pendingGameSetup = null;
+                        setupGame(gameUrl, gameId);
+                    }
+                    loadRecentlyPlayed();
                 });
         } else {
             renderRecentlyPlayedCarousel(null);
@@ -150,7 +162,7 @@ function updateAuthUI(user) {
     }
 }
 
-// ========== 6. AUTH MODAL (NICER VERSION) ==========
+// ========== 6. AUTH MODAL ==========
 function showAuthModal() {
     const existing = document.getElementById('authModal');
     if (existing) existing.remove();
@@ -211,18 +223,23 @@ function showAuthModal() {
 
 // ========== 7. FIREBASE: LOG GAME ==========
 function logGamePlayed(gameId) {
+    console.log('🔥 logGamePlayed called with:', gameId);
     if (!auth || !currentUser) {
+        console.warn('⚠️ No auth or currentUser – skipping log');
         return Promise.resolve();
     }
     const uid = currentUser.uid;
+    console.log('👤 User UID:', uid);
     const update = {};
     update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
     return db.collection('users').doc(uid).set(update, { merge: true })
-        .catch(err => console.warn('Failed to log game:', err));
+        .then(() => console.log('✅ Game logged successfully:', gameId))
+        .catch(err => console.error('❌ Failed to log game:', err));
 }
 
-// ========== 8. RECENTLY PLAYED (with Retry) ==========
+// ========== 8. RECENTLY PLAYED ==========
 function loadRecentlyPlayed() {
+    console.log('📂 loadRecentlyPlayed called');
     if (!auth || !currentUser) {
         renderRecentlyPlayedCarousel(null);
         return;
@@ -241,8 +258,7 @@ function loadRecentlyPlayed() {
             }
         })
         .catch(err => {
-            console.warn('Error loading recently played:', err);
-            // Show a retry button instead of just "No games"
+            console.warn('⚠️ Error loading recently played:', err);
             const container = document.getElementById('recently-played-container');
             if (container) {
                 container.innerHTML = `
@@ -260,6 +276,7 @@ function loadRecentlyPlayed() {
 }
 
 function renderRecentlyPlayedCarousel(gameIds) {
+    console.log('🖼️ renderRecentlyPlayedCarousel with:', gameIds);
     const container = document.getElementById('recently-played-container');
     if (!container) return;
     container.innerHTML = '';
@@ -328,8 +345,16 @@ function generateNav() {
     `;
 }
 
-// ========== 10. GAME LOADING (with logging) ==========
+// ========== 10. GAME LOADING (with queuing) ==========
 function setupGame(gameUrl, gameId) {
+    console.log('🎮 setupGame called with:', gameUrl, gameId);
+    // If Firebase isn't ready or user isn't signed in, queue the setup
+    if (!auth || !currentUser) {
+        console.warn('⏳ Firebase or user not ready – queuing setup for later');
+        pendingGameSetup = { gameUrl, gameId };
+        return;
+    }
+    // Proceed with logging and rendering
     if (gameId) {
         logGamePlayed(gameId);
     }
@@ -411,4 +436,5 @@ window.addEventListener('DOMContentLoaded', () => {
             setTimeout(filterGames, 150);
         }
     }
+});
 });
