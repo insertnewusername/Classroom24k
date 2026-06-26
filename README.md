@@ -4,4 +4,4 @@ Classroom 24k is a fun gaming website, where you can play all the games you want
 
 Website link: https://insertnewusername.github.io/Classroom24k.github.io/
 
-The use of some AI was used in the production of the javascript and css
+The use of some AI (Gemini) was used in the production of the javascript and css
