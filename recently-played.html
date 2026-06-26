@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recently Played | Classroom 24k</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header onclick="location.href='index.html'">
+        <h1>Classroom 24k</h1>
+    </header>
+
+    <nav></nav>
+
+    <div class="container">
+        <h2 style="text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; color: #00aaff; text-shadow: 0 0 10px rgba(0, 170, 255, 0.5);">
+            Recently Played
+        </h2>
+
+        <div class="game-grid" id="recently-played-grid">
+            <!-- populated by script.js -->
+            <div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Call the function to load games when the page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadAllRecentlyPlayed);
+        } else {
+            loadAllRecentlyPlayed();
+        }
+    </script>
+</body>
+</html>
