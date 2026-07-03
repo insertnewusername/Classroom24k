@@ -105,6 +105,7 @@ const GAME_META = {
 
 // ========== 5. AUTH ==========
 let currentUser = null;
+let pendingLog = null; // holds { gameId } if we need to log after sign-in
 let unsubscribeRecentlyPlayed = null;
 
 function setupAuthListener() {
@@ -117,12 +118,28 @@ function setupAuthListener() {
             const uid = user.uid;
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
+                    console.log('✅ User document ready');
+                    // If we have a pending log, execute it now
+                    if (pendingLog) {
+                        const { gameId } = pendingLog;
+                        pendingLog = null;
+                        console.log('🔁 Executing pending log for:', gameId);
+                        logGamePlayed(gameId);
+                    }
                     loadRecentlyPlayed();
                 })
-                .catch(() => {
+                .catch(err => {
+                    console.warn('⚠️ Could not create user document:', err);
+                    if (pendingLog) {
+                        const { gameId } = pendingLog;
+                        pendingLog = null;
+                        logGamePlayed(gameId);
+                    }
                     loadRecentlyPlayed();
                 });
         } else {
+            // User signed out – clear pending log (they won't be able to log anyway)
+            pendingLog = null;
             if (unsubscribeRecentlyPlayed) {
                 unsubscribeRecentlyPlayed();
                 unsubscribeRecentlyPlayed = null;
@@ -148,6 +165,7 @@ function updateAuthUI(user) {
         document.getElementById('signInBtn').addEventListener('click', showAuthModal);
     }
 }
+
 
 // ========== 6. AUTH MODAL ==========
 function showAuthModal() {
@@ -209,30 +227,26 @@ function showAuthModal() {
 }
 
 
-// ========== 7. FIREBASE: LOG GAME (uses auth.currentUser directly) ==========
+// ========== 7. FIREBASE: LOG GAME ==========
 function logGamePlayed(gameId) {
-    const user = auth.currentUser;
-    if (!user) return Promise.resolve(); // not signed in
-    const uid = user.uid;
-
-    return db.collection('users').doc(uid).get()
-        .then(doc => {
-            let recentMap = {};
-            if (doc.exists && doc.data().recentlyPlayed) {
-                recentMap = doc.data().recentlyPlayed;
-            }
-            recentMap[gameId] = firebase.firestore.FieldValue.serverTimestamp();
-            return db.collection('users').doc(uid).update({
-                recentlyPlayed: recentMap
-            });
-        })
+    console.log('🔥 logGamePlayed called with:', gameId);
+    if (!auth || !currentUser) {
+        console.warn('⚠️ No auth or currentUser – skipping log');
+        return Promise.resolve();
+    }
+    const uid = currentUser.uid;
+    console.log('👤 User UID:', uid);
+    const update = {};
+    update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
+    return db.collection('users').doc(uid).set(update, { merge: true })
         .then(() => {
-            return trimRecentlyPlayed(uid);
-        })
-        .then(() => {
+            console.log('✅ Game logged successfully:', gameId);
+            // Trim old entries (keep 20)
+            trimRecentlyPlayed(uid);
+            // Reload carousel after 1s
             setTimeout(() => {
                 loadRecentlyPlayed();
-            }, 1500);
+            }, 1000);
         })
         .catch(err => console.error('❌ Failed to log game:', err));
 }
@@ -266,16 +280,15 @@ function loadRecentlyPlayed() {
         unsubscribeRecentlyPlayed = null;
     }
 
-    const user = auth.currentUser;
-    if (!user) {
+    if (!auth || !currentUser) {
         renderRecentlyPlayedCarousel(null);
         return;
     }
 
-    const uid = user.uid;
+    const uid = currentUser.uid;
     const docRef = db.collection('users').doc(uid);
 
-    // Force fresh read from server
+    // First, force a fresh read from the server
     docRef.get({ source: 'server' })
         .then(doc => {
             if (doc.exists && doc.data().recentlyPlayed) {
@@ -304,8 +317,9 @@ function loadRecentlyPlayed() {
                 });
         });
 
-    // Real-time listener
+    // Real‑time listener for updates
     unsubscribeRecentlyPlayed = docRef.onSnapshot({ includeMetadataChanges: true }, doc => {
+        console.log('📄 Snapshot data (live):', doc.data());
         if (doc.exists && doc.data().recentlyPlayed) {
             const data = doc.data().recentlyPlayed;
             const sorted = Object.entries(data)
@@ -321,16 +335,15 @@ function loadRecentlyPlayed() {
 }
 
 function renderRecentlyPlayedCarousel(gameIds) {
+    console.log('🖼️ renderRecentlyPlayedCarousel with:', gameIds);
     const container = document.getElementById('recently-played-container');
     if (!container) return;
     container.innerHTML = '';
 
-    const user = auth.currentUser;
-
     if (!gameIds || gameIds.length === 0) {
         const msg = document.createElement('div');
         msg.style.cssText = 'padding: 40px; text-align:center; color:#aaa; font-size:1.2rem;';
-        msg.textContent = user ? 'No games played yet. Go play something!' : 'Sign in to see your recently played games.';
+        msg.textContent = currentUser ? 'No games played yet. Go play something!' : 'Sign in to see your recently played games.';
         container.appendChild(msg);
         return;
     }
@@ -341,6 +354,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
     const track = document.createElement('div');
     track.className = 'carousel-track';
 
+    // Add game cards
     gameIds.forEach(gameId => {
         const meta = GAME_META[gameId];
         if (!meta) return;
@@ -354,7 +368,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
         track.appendChild(card);
     });
 
-    // "More" card
+    // Add "More" card
     const moreCard = document.createElement('a');
     moreCard.className = 'game-card';
     moreCard.href = 'recently-played.html';
@@ -391,6 +405,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
     };
     track.appendChild(moreCard);
 
+    // Scroll buttons
     const leftBtn = document.createElement('button');
     leftBtn.className = 'scroll-btn left-btn';
     leftBtn.innerHTML = '&#10094;';
@@ -406,6 +421,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
     wrapper.appendChild(rightBtn);
     container.appendChild(wrapper);
 }
+
 
 // ========== 10. NAVIGATION ==========
 function generateNav() {
@@ -430,6 +446,7 @@ function generateNav() {
 
 // ========== 11. GAME LOADING ==========
 function setupGame(gameUrl, gameId) {
+    console.log('🎮 setupGame called with:', gameUrl, gameId);
     const container = document.getElementById('game-container');
     if (!container) return;
 
@@ -442,10 +459,20 @@ function setupGame(gameUrl, gameId) {
             </div>
         </div>`;
 
-    // Log the game if user is signed in (auth.currentUser is always up-to-date)
+    // Handle logging / queuing
     if (auth && auth.currentUser && gameId) {
+        // User is already signed in – log immediately
+        console.log('✅ User signed in, logging now');
         logGamePlayed(gameId);
+    } else if (auth && gameId) {
+        // User might sign in later (auth exists but currentUser is null)
+        // We'll queue the log only if the user is not signed in yet
+        // but we know they might be signing in (e.g., page loaded before auth)
+        // We'll use a pendingLog – but only if we don't already have one
+        console.warn('⏳ User not signed in or auth not ready – queuing log for later');
+        pendingLog = { gameId };
     }
+    // If auth is undefined (Firebase not loaded) or gameId missing, do nothing
 }
 
 function loadIframe(url) {
@@ -461,6 +488,7 @@ function openFullscreen() {
         else if (container.msRequestFullscreen) container.msRequestFullscreen();
     }
 }
+
 
 
 // ========== 12. RECENTLY PLAYED FULL PAGE ==========
