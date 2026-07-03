@@ -5,7 +5,7 @@
 
 // ========== 0. DOMAIN LOCK (CASE-INSENSITIVE) ==========
 (function() {
-    const authorized = "insertnewusername.github.io/Classroom24k.github.io";
+    const authorized = "insertnewusername.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
 
     // Allows 'localhost' for your development, but breaks on any other domain
