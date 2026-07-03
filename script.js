@@ -1,4 +1,4 @@
-// ========== Startup ==========
+// ========== 0. DOMAIN LOCK (CASE-INSENSITIVE) ==========
 (function() {
     const authorized = "insertnewusername.github.io/Classroom24k.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
@@ -117,25 +117,23 @@ function setupAuthListener() {
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
                     console.log('✅ User document ready');
-                    // Process pending log (if any) – just log, don't re-render
                     if (pendingGameSetup) {
-                        const { gameId } = pendingGameSetup;
+                        const { gameUrl, gameId } = pendingGameSetup;
                         pendingGameSetup = null;
-                        logGamePlayed(gameId);
+                        setupGame(gameUrl, gameId);
                     }
                     loadRecentlyPlayed();
                 })
                 .catch(err => {
                     console.warn('⚠️ Could not create user document:', err);
                     if (pendingGameSetup) {
-                        const { gameId } = pendingGameSetup;
+                        const { gameUrl, gameId } = pendingGameSetup;
                         pendingGameSetup = null;
-                        logGamePlayed(gameId);
+                        setupGame(gameUrl, gameId);
                     }
                     loadRecentlyPlayed();
                 });
         } else {
-            pendingGameSetup = null; // clear queue on sign-out
             if (unsubscribeRecentlyPlayed) {
                 unsubscribeRecentlyPlayed();
                 unsubscribeRecentlyPlayed = null;
@@ -457,13 +455,19 @@ function generateNav() {
     `;
 }
 
-// ========== 11. GAME LOADING (always renders, queues only if Firebase not loaded yet) ==========
+// ========== 11. GAME LOADING (with queuing) ==========
 function setupGame(gameUrl, gameId) {
     console.log('🎮 setupGame called with:', gameUrl, gameId);
+    if (!auth || !currentUser) {
+        console.warn('⏳ Firebase or user not ready – queuing setup for later');
+        pendingGameSetup = { gameUrl, gameId };
+        return;
+    }
+    if (gameId) {
+        logGamePlayed(gameId);
+    }
     const container = document.getElementById('game-container');
     if (!container) return;
-
-    // 1. Always render the play button
     container.innerHTML = `
         <div class="iframe-hover-zone" onclick="loadIframe('${gameUrl}')">
             <div class="play-content">
@@ -471,29 +475,8 @@ function setupGame(gameUrl, gameId) {
                 <div class="play-text" style="font-size:2rem; letter-spacing:4px;">PLAY NOW</div>
             </div>
         </div>`;
-
-    // 2. If no gameId, nothing to log
-    if (!gameId) return;
-
-    // 3. If user is already signed in, log immediately
-    if (auth && currentUser) {
-        logGamePlayed(gameId);
-        return;
-    }
-
-    // 4. If auth is defined but user is NOT signed in (guest) – do nothing, no queue
-    if (auth && !currentUser) {
-        console.log('ℹ️ Guest user – not logging');
-        return;
-    }
-
-    // 5. If auth is undefined (Firebase not loaded yet), we don't know if user is signed in.
-    //    Queue the log so it can be processed later if the user signs in.
-    console.warn('⏳ Firebase not ready – queuing log for later');
-    pendingGameSetup = { gameUrl, gameId };
 }
 
-// Keep these as they are – no changes needed
 function loadIframe(url) {
     const container = document.getElementById('game-container');
     container.innerHTML = `<iframe id="game-frame" src="${url}" allowfullscreen="true"></iframe>`;
