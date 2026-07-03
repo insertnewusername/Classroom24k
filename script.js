@@ -1,6 +1,3 @@
-/**
- * script.js - Classroom 24k - Firebase + Recently Played (Clean)
- */
 
 
 // ========== 0. DOMAIN LOCK (CASE-INSENSITIVE) ==========
@@ -108,7 +105,6 @@ const GAME_META = {
 
 // ========== 5. AUTH ==========
 let currentUser = null;
-let pendingGameSetup = null;
 let unsubscribeRecentlyPlayed = null;
 
 function setupAuthListener() {
@@ -121,21 +117,9 @@ function setupAuthListener() {
             const uid = user.uid;
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
-                    console.log('✅ User document ready');
-                    if (pendingGameSetup) {
-                        const { gameUrl, gameId } = pendingGameSetup;
-                        pendingGameSetup = null;
-                        setupGame(gameUrl, gameId);
-                    }
                     loadRecentlyPlayed();
                 })
-                .catch(err => {
-                    console.warn('⚠️ Could not create user document:', err);
-                    if (pendingGameSetup) {
-                        const { gameUrl, gameId } = pendingGameSetup;
-                        pendingGameSetup = null;
-                        setupGame(gameUrl, gameId);
-                    }
+                .catch(() => {
                     loadRecentlyPlayed();
                 });
         } else {
@@ -164,6 +148,7 @@ function updateAuthUI(user) {
         document.getElementById('signInBtn').addEventListener('click', showAuthModal);
     }
 }
+
 
 // ========== 6. AUTH MODAL ==========
 function showAuthModal() {
@@ -226,40 +211,50 @@ function showAuthModal() {
 
 // ========== 7. FIREBASE: LOG GAME ==========
 function logGamePlayed(gameId) {
-    console.log('🔥 logGamePlayed called with:', gameId);
-    if (!auth || !currentUser) {
-        console.warn('⚠️ No auth or currentUser – skipping log');
-        return Promise.resolve();
-    }
+    if (!auth || !currentUser) return Promise.resolve();
     const uid = currentUser.uid;
-    console.log('👤 User UID:', uid);
 
-    // Get the current document, merge new game into the map, then update
     return db.collection('users').doc(uid).get()
         .then(doc => {
             let recentMap = {};
             if (doc.exists && doc.data().recentlyPlayed) {
                 recentMap = doc.data().recentlyPlayed;
             }
-            // Add/update the new game with server timestamp
             recentMap[gameId] = firebase.firestore.FieldValue.serverTimestamp();
-
             return db.collection('users').doc(uid).update({
                 recentlyPlayed: recentMap
             });
         })
         .then(() => {
-            console.log('✅ Game logged successfully:', gameId);
-            // Trim after update
             return trimRecentlyPlayed(uid);
         })
         .then(() => {
-            // Reload carousel after 1.5s to ensure Firestore syncs
             setTimeout(() => {
                 loadRecentlyPlayed();
             }, 1500);
         })
         .catch(err => console.error('❌ Failed to log game:', err));
+}
+
+// ========== 8. TRIM RECENTLY PLAYED (keep 20) ==========
+function trimRecentlyPlayed(uid) {
+    return db.collection('users').doc(uid).get()
+        .then(doc => {
+            if (!doc.exists || !doc.data().recentlyPlayed) return;
+            const data = doc.data().recentlyPlayed;
+            const entries = Object.entries(data);
+            if (entries.length <= 20) return;
+            entries.sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0));
+            const top20 = entries.slice(0, 20);
+            const trimmed = {};
+            top20.forEach(([gameId, timestamp]) => {
+                trimmed[gameId] = timestamp;
+            });
+            return db.collection('users').doc(uid).update({
+                recentlyPlayed: trimmed
+            });
+        })
+        .catch(err => console.warn('⚠️ Could not trim recently played:', err));
 }
 
 // ========== 9. RECENTLY PLAYED CAROUSEL ==========
@@ -277,7 +272,7 @@ function loadRecentlyPlayed() {
     const uid = currentUser.uid;
     const docRef = db.collection('users').doc(uid);
 
-    // First, force a fresh read from the server
+    // Force fresh read from server
     docRef.get({ source: 'server' })
         .then(doc => {
             if (doc.exists && doc.data().recentlyPlayed) {
@@ -306,9 +301,8 @@ function loadRecentlyPlayed() {
                 });
         });
 
-    // Real‑time listener for updates
+    // Real-time listener
     unsubscribeRecentlyPlayed = docRef.onSnapshot({ includeMetadataChanges: true }, doc => {
-        console.log('📄 Snapshot data (live):', doc.data());
         if (doc.exists && doc.data().recentlyPlayed) {
             const data = doc.data().recentlyPlayed;
             const sorted = Object.entries(data)
@@ -432,19 +426,12 @@ function generateNav() {
     `;
 }
 
-// ========== 11. GAME LOADING (with queuing) ==========
+// ========== 11. GAME LOADING ==========
 function setupGame(gameUrl, gameId) {
-    console.log('🎮 setupGame called with:', gameUrl, gameId);
-    if (!auth || !currentUser) {
-        console.warn('⏳ Firebase or user not ready – queuing setup for later');
-        pendingGameSetup = { gameUrl, gameId };
-        return;
-    }
-    if (gameId) {
-        logGamePlayed(gameId);
-    }
     const container = document.getElementById('game-container');
     if (!container) return;
+
+    // Always render the play button
     container.innerHTML = `
         <div class="iframe-hover-zone" onclick="loadIframe('${gameUrl}')">
             <div class="play-content">
@@ -452,6 +439,11 @@ function setupGame(gameUrl, gameId) {
                 <div class="play-text" style="font-size:2rem; letter-spacing:4px;">PLAY NOW</div>
             </div>
         </div>`;
+
+    // Log the game if user is signed in
+    if (auth && currentUser && gameId) {
+        logGamePlayed(gameId);
+    }
 }
 
 function loadIframe(url) {
@@ -467,6 +459,7 @@ function openFullscreen() {
         else if (container.msRequestFullscreen) container.msRequestFullscreen();
     }
 }
+
 
 // ========== 12. RECENTLY PLAYED FULL PAGE ==========
 function loadAllRecentlyPlayed() {
