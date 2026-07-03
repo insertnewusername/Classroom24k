@@ -1,4 +1,7 @@
-// ========== 0. DOMAIN LOCK (CASE-INSENSITIVE) ==========
+
+
+
+// ========== 0. Setup ==========
 (function() {
     const authorized = "insertnewusername.github.io/Classroom24k.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
@@ -228,36 +231,10 @@ function logGamePlayed(gameId) {
     }
     const uid = currentUser.uid;
     console.log('👤 User UID:', uid);
-    const update = {};
-    update[`recentlyPlayed.${gameId}`] = firebase.firestore.FieldValue.serverTimestamp();
-    return db.collection('users').doc(uid).set(update, { merge: true })
-        .then(() => {
-            console.log('✅ Game logged successfully:', gameId);
-            // Trim old entries (keep 20)
-            trimRecentlyPlayed(uid);
-            // Reload carousel after 1s
-            setTimeout(() => {
-                loadRecentlyPlayed();
-            }, 1000);
-        })
-        .catch(err => console.error('❌ Failed to log game:', err));
-}
 
-// ========== 8. TRIM RECENTLY PLAYED (keep 20) ==========
-function trimRecentlyPlayed(uid) {
     // Get the current document, merge new game into the map, then update
     return db.collection('users').doc(uid).get()
         .then(doc => {
-            if (!doc.exists || !doc.data().recentlyPlayed) return;
-            const data = doc.data().recentlyPlayed;
-            const entries = Object.entries(data);
-            if (entries.length <= 20) return;
-            entries.sort((a, b) => (b[1]?.seconds || 0) - (a[1]?.seconds || 0));
-            const top20 = entries.slice(0, 20);
-            const trimmed = {};
-            top20.forEach(([gameId, timestamp]) => {
-                trimmed[gameId] = timestamp;
-            });
             let recentMap = {};
             if (doc.exists && doc.data().recentlyPlayed) {
                 recentMap = doc.data().recentlyPlayed;
@@ -266,11 +243,9 @@ function trimRecentlyPlayed(uid) {
             recentMap[gameId] = firebase.firestore.FieldValue.serverTimestamp();
 
             return db.collection('users').doc(uid).update({
-                recentlyPlayed: trimmed
                 recentlyPlayed: recentMap
             });
         })
-        .catch(err => console.warn('⚠️ Could not trim recently played:', err));
         .then(() => {
             console.log('✅ Game logged successfully:', gameId);
             // Trim after update
