@@ -1,8 +1,6 @@
-
-
-// ========== 0. setup ==========
+// ========== Startup ==========
 (function() {
-    const authorized = "insertnewusername.github.io";
+    const authorized = "insertnewusername.github.io/Classroom24k.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
 
     // Allows 'localhost' for your development, but breaks on any other domain
@@ -105,7 +103,7 @@ const GAME_META = {
 
 // ========== 5. AUTH ==========
 let currentUser = null;
-let pendingLog = null; // holds { gameId } if we need to log after sign-in
+let pendingGameSetup = null;
 let unsubscribeRecentlyPlayed = null;
 
 function setupAuthListener() {
@@ -119,27 +117,25 @@ function setupAuthListener() {
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
                     console.log('✅ User document ready');
-                    // If we have a pending log, execute it now
-                    if (pendingLog) {
-                        const { gameId } = pendingLog;
-                        pendingLog = null;
-                        console.log('🔁 Executing pending log for:', gameId);
+                    // Process pending log (if any) – just log, don't re-render
+                    if (pendingGameSetup) {
+                        const { gameId } = pendingGameSetup;
+                        pendingGameSetup = null;
                         logGamePlayed(gameId);
                     }
                     loadRecentlyPlayed();
                 })
                 .catch(err => {
                     console.warn('⚠️ Could not create user document:', err);
-                    if (pendingLog) {
-                        const { gameId } = pendingLog;
-                        pendingLog = null;
+                    if (pendingGameSetup) {
+                        const { gameId } = pendingGameSetup;
+                        pendingGameSetup = null;
                         logGamePlayed(gameId);
                     }
                     loadRecentlyPlayed();
                 });
         } else {
-            // User signed out – clear pending log (they won't be able to log anyway)
-            pendingLog = null;
+            pendingGameSetup = null; // clear queue on sign-out
             if (unsubscribeRecentlyPlayed) {
                 unsubscribeRecentlyPlayed();
                 unsubscribeRecentlyPlayed = null;
@@ -165,7 +161,6 @@ function updateAuthUI(user) {
         document.getElementById('signInBtn').addEventListener('click', showAuthModal);
     }
 }
-
 
 // ========== 6. AUTH MODAL ==========
 function showAuthModal() {
@@ -226,7 +221,6 @@ function showAuthModal() {
     });
 }
 
-
 // ========== 7. FIREBASE: LOG GAME ==========
 function logGamePlayed(gameId) {
     console.log('🔥 logGamePlayed called with:', gameId);
@@ -251,9 +245,9 @@ function logGamePlayed(gameId) {
         .catch(err => console.error('❌ Failed to log game:', err));
 }
 
-
 // ========== 8. TRIM RECENTLY PLAYED (keep 20) ==========
 function trimRecentlyPlayed(uid) {
+    // Get the current document, merge new game into the map, then update
     return db.collection('users').doc(uid).get()
         .then(doc => {
             if (!doc.exists || !doc.data().recentlyPlayed) return;
@@ -266,11 +260,31 @@ function trimRecentlyPlayed(uid) {
             top20.forEach(([gameId, timestamp]) => {
                 trimmed[gameId] = timestamp;
             });
+            let recentMap = {};
+            if (doc.exists && doc.data().recentlyPlayed) {
+                recentMap = doc.data().recentlyPlayed;
+            }
+            // Add/update the new game with server timestamp
+            recentMap[gameId] = firebase.firestore.FieldValue.serverTimestamp();
+
             return db.collection('users').doc(uid).update({
                 recentlyPlayed: trimmed
+                recentlyPlayed: recentMap
             });
         })
         .catch(err => console.warn('⚠️ Could not trim recently played:', err));
+        .then(() => {
+            console.log('✅ Game logged successfully:', gameId);
+            // Trim after update
+            return trimRecentlyPlayed(uid);
+        })
+        .then(() => {
+            // Reload carousel after 1.5s to ensure Firestore syncs
+            setTimeout(() => {
+                loadRecentlyPlayed();
+            }, 1500);
+        })
+        .catch(err => console.error('❌ Failed to log game:', err));
 }
 
 // ========== 9. RECENTLY PLAYED CAROUSEL ==========
@@ -422,7 +436,6 @@ function renderRecentlyPlayedCarousel(gameIds) {
     container.appendChild(wrapper);
 }
 
-
 // ========== 10. NAVIGATION ==========
 function generateNav() {
     const nav = document.querySelector('nav');
@@ -444,13 +457,13 @@ function generateNav() {
     `;
 }
 
-// ========== 11. GAME LOADING ==========
+// ========== 11. GAME LOADING (always renders, queues only if Firebase not loaded yet) ==========
 function setupGame(gameUrl, gameId) {
     console.log('🎮 setupGame called with:', gameUrl, gameId);
     const container = document.getElementById('game-container');
     if (!container) return;
 
-    // Always render the play button
+    // 1. Always render the play button
     container.innerHTML = `
         <div class="iframe-hover-zone" onclick="loadIframe('${gameUrl}')">
             <div class="play-content">
@@ -459,22 +472,28 @@ function setupGame(gameUrl, gameId) {
             </div>
         </div>`;
 
-    // Handle logging / queuing
-    if (auth && auth.currentUser && gameId) {
-        // User is already signed in – log immediately
-        console.log('✅ User signed in, logging now');
+    // 2. If no gameId, nothing to log
+    if (!gameId) return;
+
+    // 3. If user is already signed in, log immediately
+    if (auth && currentUser) {
         logGamePlayed(gameId);
-    } else if (auth && gameId) {
-        // User might sign in later (auth exists but currentUser is null)
-        // We'll queue the log only if the user is not signed in yet
-        // but we know they might be signing in (e.g., page loaded before auth)
-        // We'll use a pendingLog – but only if we don't already have one
-        console.warn('⏳ User not signed in or auth not ready – queuing log for later');
-        pendingLog = { gameId };
+        return;
     }
-    // If auth is undefined (Firebase not loaded) or gameId missing, do nothing
+
+    // 4. If auth is defined but user is NOT signed in (guest) – do nothing, no queue
+    if (auth && !currentUser) {
+        console.log('ℹ️ Guest user – not logging');
+        return;
+    }
+
+    // 5. If auth is undefined (Firebase not loaded yet), we don't know if user is signed in.
+    //    Queue the log so it can be processed later if the user signs in.
+    console.warn('⏳ Firebase not ready – queuing log for later');
+    pendingGameSetup = { gameUrl, gameId };
 }
 
+// Keep these as they are – no changes needed
 function loadIframe(url) {
     const container = document.getElementById('game-container');
     container.innerHTML = `<iframe id="game-frame" src="${url}" allowfullscreen="true"></iframe>`;
@@ -488,8 +507,6 @@ function openFullscreen() {
         else if (container.msRequestFullscreen) container.msRequestFullscreen();
     }
 }
-
-
 
 // ========== 12. RECENTLY PLAYED FULL PAGE ==========
 function loadAllRecentlyPlayed() {
