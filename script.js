@@ -1,6 +1,6 @@
 
 
-// ========== 0. DOMAIN LOCK (CASE-INSENSITIVE) ==========
+// ========== 0. setup ==========
 (function() {
     const authorized = "insertnewusername.github.io";
     const currentLoc = window.location.hostname + window.location.pathname;
@@ -149,7 +149,6 @@ function updateAuthUI(user) {
     }
 }
 
-
 // ========== 6. AUTH MODAL ==========
 function showAuthModal() {
     const existing = document.getElementById('authModal');
@@ -209,10 +208,12 @@ function showAuthModal() {
     });
 }
 
-// ========== 7. FIREBASE: LOG GAME ==========
+
+// ========== 7. FIREBASE: LOG GAME (uses auth.currentUser directly) ==========
 function logGamePlayed(gameId) {
-    if (!auth || !currentUser) return Promise.resolve();
-    const uid = currentUser.uid;
+    const user = auth.currentUser;
+    if (!user) return Promise.resolve(); // not signed in
+    const uid = user.uid;
 
     return db.collection('users').doc(uid).get()
         .then(doc => {
@@ -235,6 +236,7 @@ function logGamePlayed(gameId) {
         })
         .catch(err => console.error('❌ Failed to log game:', err));
 }
+
 
 // ========== 8. TRIM RECENTLY PLAYED (keep 20) ==========
 function trimRecentlyPlayed(uid) {
@@ -264,12 +266,13 @@ function loadRecentlyPlayed() {
         unsubscribeRecentlyPlayed = null;
     }
 
-    if (!auth || !currentUser) {
+    const user = auth.currentUser;
+    if (!user) {
         renderRecentlyPlayedCarousel(null);
         return;
     }
 
-    const uid = currentUser.uid;
+    const uid = user.uid;
     const docRef = db.collection('users').doc(uid);
 
     // Force fresh read from server
@@ -318,15 +321,16 @@ function loadRecentlyPlayed() {
 }
 
 function renderRecentlyPlayedCarousel(gameIds) {
-    console.log('🖼️ renderRecentlyPlayedCarousel with:', gameIds);
     const container = document.getElementById('recently-played-container');
     if (!container) return;
     container.innerHTML = '';
 
+    const user = auth.currentUser;
+
     if (!gameIds || gameIds.length === 0) {
         const msg = document.createElement('div');
         msg.style.cssText = 'padding: 40px; text-align:center; color:#aaa; font-size:1.2rem;';
-        msg.textContent = currentUser ? 'No games played yet. Go play something!' : 'Sign in to see your recently played games.';
+        msg.textContent = user ? 'No games played yet. Go play something!' : 'Sign in to see your recently played games.';
         container.appendChild(msg);
         return;
     }
@@ -337,7 +341,6 @@ function renderRecentlyPlayedCarousel(gameIds) {
     const track = document.createElement('div');
     track.className = 'carousel-track';
 
-    // Add game cards
     gameIds.forEach(gameId => {
         const meta = GAME_META[gameId];
         if (!meta) return;
@@ -351,7 +354,7 @@ function renderRecentlyPlayedCarousel(gameIds) {
         track.appendChild(card);
     });
 
-    // Add "More" card
+    // "More" card
     const moreCard = document.createElement('a');
     moreCard.className = 'game-card';
     moreCard.href = 'recently-played.html';
@@ -388,7 +391,6 @@ function renderRecentlyPlayedCarousel(gameIds) {
     };
     track.appendChild(moreCard);
 
-    // Scroll buttons
     const leftBtn = document.createElement('button');
     leftBtn.className = 'scroll-btn left-btn';
     leftBtn.innerHTML = '&#10094;';
@@ -440,8 +442,8 @@ function setupGame(gameUrl, gameId) {
             </div>
         </div>`;
 
-    // Log the game if user is signed in
-    if (auth && currentUser && gameId) {
+    // Log the game if user is signed in (auth.currentUser is always up-to-date)
+    if (auth && auth.currentUser && gameId) {
         logGamePlayed(gameId);
     }
 }
