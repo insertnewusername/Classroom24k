@@ -1,21 +1,4 @@
 
-
-
-// ========== 0. Setup ==========
-(function() {
-    const authorized = "insertnewusername.github.io/Classroom24k.github.io";
-    const currentLoc = window.location.hostname + window.location.pathname;
-
-    // Allows 'localhost' for your development, but breaks on any other domain
-    if (!currentLoc.includes(authorized) && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-        document.body.innerHTML = `
-            <div style="background:#081221; color:white; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; text-align:center; padding: 20px;">
-                <h1 style="color:#00aaff; font-size: 3rem;">ACCESS DENIED</h1>
-                <p style="font-size: 1.2rem; opacity: 0.8;">This website content is protected and exclusive to Classroom 24k.</p>
-            </div>`;
-        throw new Error("Script terminated: Unauthorized Domain.");
-    }
-})();
 // ========== 1. GOOGLE ANALYTICS ==========
 (function() {
     var gtagScript = document.createElement('script');
