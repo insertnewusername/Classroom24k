@@ -19,3 +19,9 @@ Playing a game:
 <img width="1918" height="870" alt="Screenshot 2026-06-26 143544" src="https://github.com/user-attachments/assets/371587c6-1173-40d7-a174-731aa22db0b1" />
 
 This is a project for #horizons
+
+Note: On horizons I linked 2 projects, this was because I realised I could download github desktop to sync between vs code and github, before I manually pasted the code from vs code to github.
+
+Changes:
+
+Added more games to the top tabs
