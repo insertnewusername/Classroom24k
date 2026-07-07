@@ -11,7 +11,7 @@
     gtag('config', 'G-2D22NMRV2Z');
 })();
 
-// ========== 2. FIREBASE SDK (load dynamically) ==========
+// ========== 2. FIREBASE SDK ==========
 (function loadFirebase() {
     const scripts = [
         'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
@@ -102,8 +102,8 @@ function setupAuthListener() {
             const uid = user.uid;
             db.collection('users').doc(uid).set({}, { merge: true })
                 .then(() => {
-                    console.log('✅ User document ready');
-                    // Process pending log (if any) – just log, don't re-render
+                    console.log('User document ready');
+                    // Process pending log 
                     if (pendingGameSetup) {
                         const { gameId } = pendingGameSetup;
                         pendingGameSetup = null;
@@ -112,7 +112,7 @@ function setupAuthListener() {
                     loadRecentlyPlayed();
                 })
                 .catch(err => {
-                    console.warn('⚠️ Could not create user document:', err);
+                    console.warn('Could not create user document:', err);
                     if (pendingGameSetup) {
                         const { gameId } = pendingGameSetup;
                         pendingGameSetup = null;
@@ -208,7 +208,7 @@ function showAuthModal() {
 
 // ========== 7. FIREBASE: LOG GAME ==========
 function logGamePlayed(gameId) {
-    console.log('🔥 logGamePlayed called with:', gameId);
+    console.log(' logGamePlayed called with:', gameId);
     if (!auth || !currentUser) {
         console.warn('⚠️ No auth or currentUser – skipping log');
         return Promise.resolve();
@@ -231,17 +231,17 @@ function logGamePlayed(gameId) {
             });
         })
         .then(() => {
-            console.log('✅ Game logged successfully:', gameId);
+            console.log(' Game logged successfully:', gameId);
             // Trim after update
             return trimRecentlyPlayed(uid);
         })
         .then(() => {
-            // Reload carousel after 1.5s to ensure Firestore syncs
+            // Reload carousel
             setTimeout(() => {
                 loadRecentlyPlayed();
             }, 1500);
         })
-        .catch(err => console.error('❌ Failed to log game:', err));
+        .catch(err => console.error(' Failed to log game:', err));
 }
 
 // ========== 9. RECENTLY PLAYED CAROUSEL ==========
@@ -259,7 +259,7 @@ function loadRecentlyPlayed() {
     const uid = currentUser.uid;
     const docRef = db.collection('users').doc(uid);
 
-    // First, force a fresh read from the server
+    // Fresh read from the server
     docRef.get({ source: 'server' })
         .then(doc => {
             if (doc.exists && doc.data().recentlyPlayed) {
@@ -290,7 +290,7 @@ function loadRecentlyPlayed() {
 
     // Real‑time listener for updates
     unsubscribeRecentlyPlayed = docRef.onSnapshot({ includeMetadataChanges: true }, doc => {
-        console.log('📄 Snapshot data (live):', doc.data());
+        console.log('Snapshot data (live):', doc.data());
         if (doc.exists && doc.data().recentlyPlayed) {
             const data = doc.data().recentlyPlayed;
             const sorted = Object.entries(data)
@@ -301,12 +301,12 @@ function loadRecentlyPlayed() {
             renderRecentlyPlayedCarousel([]);
         }
     }, error => {
-        console.warn('⚠️ Real‑time listener error:', error);
+        console.warn(' Real‑time listener error:', error);
     });
 }
 
 function renderRecentlyPlayedCarousel(gameIds) {
-    console.log('🖼️ renderRecentlyPlayedCarousel with:', gameIds);
+    console.log('renderRecentlyPlayedCarousel with:', gameIds);
     const container = document.getElementById('recently-played-container');
     if (!container) return;
     container.innerHTML = '';
@@ -414,7 +414,7 @@ function generateNav() {
     `;
 }
 
-// ========== 11. GAME LOADING (always renders, queues only if Firebase not loaded yet) ==========
+// ========== 11. GAME LOADING ==========
 function setupGame(gameUrl, gameId) {
     console.log('🎮 setupGame called with:', gameUrl, gameId);
     const container = document.getElementById('game-container');
@@ -444,13 +444,11 @@ function setupGame(gameUrl, gameId) {
         return;
     }
 
-    // 5. If auth is undefined (Firebase not loaded yet), we don't know if user is signed in.
-    //    Queue the log so it can be processed later if the user signs in.
+    // 5. Queue log 
     console.warn('⏳ Firebase not ready – queuing log for later');
     pendingGameSetup = { gameUrl, gameId };
 }
 
-// Keep these as they are – no changes needed
 function loadIframe(url) {
     const container = document.getElementById('game-container');
     container.innerHTML = `<iframe id="game-frame" src="${url}" allowfullscreen="true"></iframe>`;
@@ -488,7 +486,7 @@ function loadAllRecentlyPlayed() {
             }
         })
         .catch(err => {
-            console.warn('⚠️ Error loading all recently played:', err);
+            console.warn(' Error loading all recently played:', err);
             const grid = document.getElementById('recently-played-grid');
             if (grid) {
                 grid.innerHTML = `<div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">Could not load games. <button onclick="loadAllRecentlyPlayed()" style="background:#00aaff; color:#081221; border:none; padding:8px 20px; border-radius:30px; cursor:pointer; font-weight:bold; margin-top:10px;">Retry</button></div>`;
