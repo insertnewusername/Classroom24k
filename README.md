@@ -3,7 +3,7 @@
 Games
 Classroom 24k is a fun gaming website, where you can play all the games you want!. Explore the various games that the website holds, and have fun! Enjoy!
 
-Website link: https://insertnewusername.github.io/Classroom24k.github.io/
+Website link: https://classroom24k-github-io.vercel.app
 
 Getting started: Getting started with the game is easy. Just click on the link and play!
 
