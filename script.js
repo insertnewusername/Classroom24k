@@ -58,6 +58,7 @@ if (document.readyState === 'loading') {
 
 // ========== 4. GAME METADATA ==========
 const GAME_META = {
+    "electornal-carnage": { title: "Electornal Carnage", img: "assets/electornal-carnage.png" },
     "bloxd-io": { title: "Bloxd.io", img: "https://cdn2.spatial.io/assets/v1/static/external_games/bloxd-io.jpeg" },
     "slope": { title: "Slope", img: "https://slope2unblocked.github.io/images/logo.png" },
     "tag": { title: "Tag", img: "https://abinbins.github.io/thumb/tag.png" },
