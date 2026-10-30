@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom 24k | Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header onclick="location.href='index.html'">
+        <h1>Classroom 24k</h1>
+    </header>
+    
+    <nav></nav>
+
+    <div class="container">
+        <div class="featured-banner" onclick="location.href='bloxd-io.html'">
+            <div class="featured-overlay">
+                <h2 class="featured-title">Bloxd.io</h2>
+                <p class="featured-desc">The ultimate multiplayer sandbox game</p>
+                <div class="play-now-btn">Play Now</div>
+            </div>
+        </div>
+
+
+        <!-- ===== NEW: Recently Played Carousel (replaces Trending Now) ===== -->
+        <div class="carousel-container">
+            <h2 class="carousel-title">Recently Played</h2>
+            <div id="recently-played-container">
+                <!-- This will be populated by script.js -->
+                <div style="padding:40px; text-align:center; color:#aaa; font-size:1.2rem;">
+                    Sign in to see your recently played games.
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="carousel-container">
+            <h2 class="carousel-title">Trending Now</h2>
+            <div class="carousel-wrapper">
+                <button class="scroll-btn left-btn" onclick="scrollCarousel(this, -1)">&#10094;</button>
+                <div class="carousel-track">
+                    <a href="bloxd-io.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/bloxd-io.png"></div>
+                        <div class="game-info"><h3>Bloxd.io</h3></div>
+                    </a>
+                    <a href="electoral-carnage.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/electoral-carnage.png"></div>
+                        <div class="game-info"><h3>Electoral Carnage</h3></div>
+                    </a>
+                    <a href="slope.html" class="game-card">
+                        <div class="game-img-container"><img src="https://slope2unblocked.github.io/images/logo.png"></div>
+                        <div class="game-info"><h3>Slope</h3></div>
+                    </a>
+                    <a href="bumper-cars-soccer.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/bumper-cars-soccer.png"></div>
+                        <div class="game-info"><h3>Bumper Cars</h3></div>
+                    </a>
+                    <a href="rocket-soccer-derby.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/rocket-soccer-derby.png"></div>
+                        <div class="game-info"><h3>Rocket Derby Soccer</h3></div>
+                    </a>
+                     <a href="tag.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/tag.png"></div>
+                        <div class="game-info"><h3>Tag</h3></div>
+                    </a>
+                    <a href="champions-league.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-champions-league.png"></div>
+                        <div class="game-info"><h3>Champions league</h3></div>
+                    </a>
+                    <a href="8-ball-pool.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/8-ball-pool.png"></div>
+                        <div class="game-info"><h3>8 Ball Pool</h3></div>
+                    </a>
+                    <a href="rowdy-city-wrestling.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-city-wrestling.png"></div>
+                        <div class="game-info"><h3>Rowdy City Wrestling</h3></div>
+                    </a>
+                    <a href="smash-karts.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/smash-karts.png"></div>
+                        <div class="game-info"><h3>Smash Karts</h3></div>
+                    </a>
+                    <a href="rowdy-wrestling.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-wrestling.png"></div>
+                        <div class="game-info"><h3>Rowdy Wrestling</h3></div>
+                    </a>
+                    <a href="polytrack.html" class="game-card">
+                        <div class="game-img-container"><img src="https://www.kizgame.com/thumbs/polytrack_small.webp"></div>
+                        <div class="game-info"><h3>Polytrack</h3></div>
+                    </a>
+                    <a href="cookie-clicker.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/cookie-clicker.png"></div>
+                        <div class="game-info"><h3>Cookie Clicker</h3></div>
+                    </a>
+                    <a href="world-cup.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-world-cup.png"></div>
+                        <div class="game-info"><h3>World Cup</h3></div>
+                    </a>
+                    <a href="euro-cup.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-euro-cup.png"></div>
+                        <div class="game-info"><h3>Euro Cup</h3></div>
+                    </a>
+                </div>
+                <button class="scroll-btn right-btn" onclick="scrollCarousel(this, 1)">&#10095;</button>
+            </div>
+        </div>
+
+
+
+        <div class="carousel-container">
+            <h2 class="carousel-title">Multiplayer</h2>
+            <div class="carousel-wrapper">
+                <button class="scroll-btn left-btn" onclick="scrollCarousel(this, -1)">&#10094;</button>
+                <div class="carousel-track">
+                    <a href="bloxd-io.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/bloxd-io.png"></div>
+                        <div class="game-info"><h3>Bloxd.io</h3></div>
+                    </a>
+                    <a href="stick-fighter.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/stick-fighter.png"></div>
+                        <div class="game-info"><h3>Stick fighter</h3></div>
+                    </a>
+                    <a href="bumper-cars-soccer.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/bumper-cars-soccer.png"></div>
+                        <div class="game-info"><h3>Bumper Cars</h3></div>
+                    </a>
+                    <a href="rocket-soccer-derby.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/rocket-soccer-derby.png"></div>
+                        <div class="game-info"><h3>Rocket Derby Soccer</h3></div>
+                    </a>
+                     <a href="tag.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/tag.png"></div>
+                        <div class="game-info"><h3>Tag</h3></div>
+                    </a>
+                    <a href="basket-random.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/basket-random.png"></div>
+                        <div class="game-info"><h3>Basket Random</h3></div>
+                    </a>
+                    <a href="8-ball-pool.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/8-ball-pool.png"></div>
+                        <div class="game-info"><h3>8 Ball Pool</h3></div>
+                    </a>
+                    <a href="rowdy-city-wrestling.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-city-wrestling.png"></div>
+                        <div class="game-info"><h3>Rowdy City Wrestling</h3></div>
+                    </a>
+                    <a href="smash-karts.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/smash-karts.png"></div>
+                        <div class="game-info"><h3>Smash Karts</h3></div>
+                    </a>
+                    <a href="rowdy-wrestling.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-wrestling.png"></div>
+                        <div class="game-info"><h3>Rowdy Wrestling</h3></div>
+                    </a>
+                    <a href="basketball-stars.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/basketball-stars.png"></div>
+                        <div class="game-info"><h3>Basketball Stars</h3></div>
+                    </a>
+                </div>
+                <button class="scroll-btn right-btn" onclick="scrollCarousel(this, 1)">&#10095;</button>
+            </div>
+        </div>
+
+        <div class="carousel-container">
+            <h2 class="carousel-title">Sports</h2>
+            <div class="carousel-wrapper">
+                <button class="scroll-btn left-btn" onclick="scrollCarousel(this, -1)">&#10094;</button>
+                <div class="carousel-track">
+                    <a href="free-kick-shooter.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/free-kick-shooter.png"></div>
+                        <div class="game-info"><h3>Free Kick Shooter</h3></div>
+                    </a>
+                    <a href="slope.html" class="game-card">
+                        <div class="game-img-container"><img src="https://slope2unblocked.github.io/images/logo.png"></div>
+                        <div class="game-info"><h3>Slope</h3></div>
+                    </a>
+                    <a href="bumper-cars-soccer.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/bumper-cars-soccer.png"></div>
+                        <div class="game-info"><h3>Bumper Cars</h3></div>
+                    </a>
+                    <a href="rocket-soccer-derby.html" class="game-card">
+                        <div class="game-img-container"><img src="assets/rocket-soccer-derby.png"></div>
+                        <div class="game-info"><h3>Rocket Derby Soccer</h3></div>
+                    </a>
+                     <a href="tag.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/tag.png"></div>
+                        <div class="game-info"><h3>Tag</h3></div>
+                    </a>
+                    <a href="champions-league.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-champions-league.png"></div>
+                        <div class="game-info"><h3>Champions league</h3></div>
+                    </a>
+                    <a href="8-ball-pool.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/8-ball-pool.png"></div>
+                        <div class="game-info"><h3>8 Ball Pool</h3></div>
+                    </a>
+                    <a href="rowdy-city-wrestling.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-city-wrestling.png"></div>
+                        <div class="game-info"><h3>Rowdy City Wrestling</h3></div>
+                    </a>
+                    <a href="smash-karts.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/smash-karts.png"></div>
+                        <div class="game-info"><h3>Smash Karts</h3></div>
+                    </a>
+                    <a href="rowdy-wrestling.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-wrestling.png"></div>
+                        <div class="game-info"><h3>Rowdy Wrestling</h3></div>
+                    </a>
+                    <a href="polytrack.html" class="game-card">
+                        <div class="game-img-container"><img src="https://www.kizgame.com/thumbs/polytrack_small.webp"></div>
+                        <div class="game-info"><h3>Polytrack</h3></div>
+                    </a>
+                    <a href="cookie-clicker.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/cookie-clicker.png"></div>
+                        <div class="game-info"><h3>Cookie Clicker</h3></div>
+                    </a>
+                    <a href="world-cup.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-world-cup.png"></div>
+                        <div class="game-info"><h3>World Cup</h3></div>
+                    </a>
+                    <a href="euro-cup.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-euro-cup.png"></div>
+                        <div class="game-info"><h3>Euro Cup</h3></div>
+                    </a>
+                    <a href="tiny-fishing.html" class="game-card">
+                        <div class="game-img-container"><img src="https://abinbins.github.io/thumb/tiny-fishing.png"></div>
+                        <div class="game-info"><h3>Tiny FIshing</h3></div>
+                    </a>
+                </div>
+                <button class="scroll-btn right-btn" onclick="scrollCarousel(this, 1)">&#10095;</button>
+            </div>
+        </div>
+
+        <div class="full-library-section">
+            <h2 class="carousel-title" style="margin-top: 80px;">All Games</h2>
+            
+            <div id="noResults" style="display:none; padding: 50px; font-size: 1.5rem; color: #00aaff; font-weight: bold;">
+                No games found. Try searching for something else!
+            </div>
+
+            <div class="game-grid">
+                <a href="bloxd-io.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/bloxd-io.png"></div>
+                    <div class="game-info"><h3>Bloxd.io</h3></div>
+                </a>
+                <a href="slope.html" class="game-card">
+                    <div class="game-img-container"><img src="https://slope2unblocked.github.io/images/logo.png"></div>
+                    <div class="game-info"><h3>Slope</h3></div>
+                </a>
+                <a href="slow-roads.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/slow-roads.png"></div>
+                    <div class="game-info"><h3>Slow Roads</h3></div>
+                </a>
+                <a href="tag.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/tag.png"></div>
+                    <div class="game-info"><h3>Tag</h3></div>
+                </a>
+                <a href="bumper-cars-soccer.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/bumper-cars-soccer.png"></div>
+                    <div class="game-info"><h3>Bumper Cars</h3></div>
+                </a>
+                <a href="rocket-soccer-derby.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/rocket-soccer-derby.png"></div>
+                    <div class="game-info"><h3>Rocket Derby Soccer</h3></div>
+                </a>
+                <a href="retro-bowl.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/retro-bowl.png"></div>
+                    <div class="game-info"><h3>Retro Bowl</h3></div>
+                </a>
+                <a href="8-ball-pool.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/8-ball-pool.png"></div>
+                    <div class="game-info"><h3>8 Ball Pool</h3></div>
+                </a>
+                <a href="champions-league.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-champions-league.png"></div>
+                    <div class="game-info"><h3>Champions League</h3></div>
+                </a>
+                <a href="rowdy-city-wrestling.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-city-wrestling.png"></div>
+                    <div class="game-info"><h3>Rowdy City Wrestling</h3></div>
+                </a>
+                <a href="smash-karts.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/smash-karts.png"></div>
+                    <div class="game-info"><h3>Smash Karts</h3></div>
+                </a>
+                <a href="rowdy-wrestling.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/rowdy-wrestling.png"></div>
+                    <div class="game-info"><h3>Rowdy-wrestling</h3></div>
+                </a>
+                <a href="polytrack.html" class="game-card">
+                    <div class="game-img-container"><img src="https://www.kizgame.com/thumbs/polytrack_small.webp"></div>
+                    <div class="game-info"><h3>Polytrack</h3></div>
+                </a>
+                <a href="cookie-clicker.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/cookie-clicker.png"></div>
+                    <div class="game-info"><h3>Cookie Clicker</h3></div>
+                </a>
+                <a href="world-cup.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-world-cup.png"></div>
+                    <div class="game-info"><h3>World Cup</h3></div>
+                </a>
+                <a href="basketball-stars.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/basketball-stars.png"></div>
+                    <div class="game-info"><h3>Basketball Stars</h3></div>
+                </a>
+                <a href="euro-cup.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/soccer-skills-euro-cup.png"></div>
+                    <div class="game-info"><h3>Euro Cup</h3></div>
+                </a>
+                <a href="basket-random.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/basket-random.png"></div>
+                    <div class="game-info"><h3>Basket Random</h3></div>
+                </a>
+                <a href="stick-fighter.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/stick-fighter.png"></div>
+                    <div class="game-info"><h3>Stick Fighter</h3></div>
+                </a>
+                <a href="stickman-hook.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/stickman-hook.png"></div>
+                    <div class="game-info"><h3>Stickman Hook</h3></div>
+                </a>
+                <a href="tiny-fishing.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/tiny-fishing.png"></div>
+                    <div class="game-info"><h3>Tiny Fishing</h3></div>
+                </a>
+                <a href="city-car-driving.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/city-car-driving-stunt-master.png"></div>
+                    <div class="game-info"><h3>City Car Driving</h3></div>
+                </a>
+                <a href="raft-wars.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/raft-wars.png"></div>
+                    <div class="game-info"><h3>Raft Wars</h3></div>
+                </a>
+                <a href="learn-to-fly-2.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/learn-to-fly-2.png"></div>
+                    <div class="game-info"><h3>Learn to Fly 2</h3></div>
+                </a>
+                <a href="free-kick-shooter.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/free-kick-shooter.png"></div>
+                    <div class="game-info"><h3>Free Kick Shooter</h3></div>
+                </a>
+                <a href="javelin-fighting.html" class="game-card">
+                    <div class="game-img-container"><img src="https://cdn-1.webcatalog.io/catalog/poki-javelin-fighting/poki-javelin-fighting-icon-filled-256.png"></div>
+                    <div class="game-info"><h3>Javelin Fighting</h3></div>
+                </a>
+                <a href="burnin-rubber-5-xs.html" class="game-card">
+                    <div class="game-img-container"><img src="https://static.wikia.nocookie.net/xform-games/images/f/f5/Image347457599.png"></div>
+                    <div class="game-info"><h3>Burnin Rubber 5 xs</h3></div>
+                </a>
+                <a href="crossy-road.html" class="game-card">
+                    <div class="game-img-container"><img src="https://abinbins.github.io/thumb/crossy-road.png"></div>
+                    <div class="game-info"><h3>Crossy Road</h3></div>
+                </a>
+                <a href="retro-bowl-college.html" class="game-card">
+                    <div class="game-img-container"><img src="assets/retro-bowl-college.png"></div>
+                    <div class="game-info"><h3>Retro Bowl College</h3></div>
+                </a>
+
+
+
+
+
+            </div>
+        </div>
+        
+        <div class="about-section">
+            <div class="about-content">
+                <h2>About Classroom 24k</h2>
+                <p>Welcome to Classroom 24k, a high quality gaming website that provides you with a high end gaming experience. With a massive range of games for you to choose from, you're guaranteed to find a game you like.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        function scrollCarousel(btn, direction) {
+            const track = btn.parentElement.querySelector('.carousel-track');
+            const scrollAmount = track.clientWidth * 0.8;
+            track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
